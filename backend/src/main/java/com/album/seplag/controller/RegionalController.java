@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/regionais")
+@RequestMapping("${app.api.base}/regionais")
 @Tag(name = "Regionais", description = "Endpoints para gerenciamento de regionais")
 public class RegionalController {
 

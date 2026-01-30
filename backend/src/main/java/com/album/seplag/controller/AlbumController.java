@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/albuns")
+@RequestMapping("${app.api.base}/albuns")
 @Tag(name = "Álbuns", description = "Endpoints para gerenciamento de álbuns")
 public class AlbumController {
 

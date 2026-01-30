@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/artistas")
+@RequestMapping("${app.api.base}/artistas")
 @Tag(name = "Artistas", description = "Endpoints para gerenciamento de artistas")
 public class ArtistaController {
 
