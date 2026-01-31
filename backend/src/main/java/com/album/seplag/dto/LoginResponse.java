@@ -1,15 +1,11 @@
 package com.album.seplag.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class LoginResponse {
-    private String token;
-    private String type = "Bearer";
-    private Long expiresIn;
+public record LoginResponse(
+    String token,
+    String type,
+    Long expiresIn
+) {
+    public LoginResponse(String token, Long expiresIn) {
+        this(token, "Bearer", expiresIn);
+    }
 }
-

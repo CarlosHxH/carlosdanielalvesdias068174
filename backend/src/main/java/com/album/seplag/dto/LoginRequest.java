@@ -1,18 +1,11 @@
 package com.album.seplag.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class LoginRequest {
+public record LoginRequest(
     @NotBlank(message = "Username é obrigatório")
-    private String username;
-
+    String username,
+    
     @NotBlank(message = "Password é obrigatório")
-    private String password;
-}
-
+    String password
+) {}
