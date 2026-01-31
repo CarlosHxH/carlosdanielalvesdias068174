@@ -9,9 +9,9 @@
 -- Inserir usuário padrão (senha: admin123)
 -- Hash BCrypt válido para "admin123"
 -- Este usuário possui permissões de administrador e usuário comum
-INSERT INTO usuarios (username, password, email) VALUES 
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iwy8p8qO', 'admin@seplag.com')
-ON CONFLICT (username) DO NOTHING;
+INSERT INTO usuarios (username, password, email, ativo) VALUES 
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iwy8p8qO', 'admin@seplag.com', true)
+ON CONFLICT (username) DO UPDATE SET ativo = true;
 
 -- Inserir roles do usuário admin (usando subquery para obter o ID)
 -- Role de administrador: permite acesso total ao sistema
