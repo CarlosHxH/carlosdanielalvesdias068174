@@ -2,6 +2,8 @@ package com.album.seplag.exception;
 
 import com.album.seplag.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -56,6 +58,50 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReferenceException(
+            PropertyReferenceException ex,
+            HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String entityType = detectEntityType(path);
+        String validProperties = getValidPropertiesForEntity(entityType);
+        
+        String message = String.format(
+            "Propriedade de ordenação inválida: '%s'. Propriedades válidas para %s: %s",
+            ex.getPropertyName(),
+            entityType,
+            validProperties
+        );
+        
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "Parâmetro de Ordenação Inválido",
+            message,
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidDataAccessApiUsageException(
+            InvalidDataAccessApiUsageException ex,
+            HttpServletRequest request) {
+        String message = ex.getMessage();
+        if (message != null && message.contains("sort")) {
+            message = "Formato de ordenação inválido. Use: sort=propriedade,direção (ex: sort=nome,asc ou sort=nome,desc)";
+        }
+        
+        ErrorResponse error = new ErrorResponse(
+            Instant.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            "Parâmetro de Paginação Inválido",
+            message != null ? message : "Parâmetros de paginação inválidos",
+            request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(
             RuntimeException ex,
@@ -92,5 +138,25 @@ public class GlobalExceptionHandler {
             request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    private String detectEntityType(String path) {
+        if (path.contains("/artistas")) {
+            return "Artista";
+        } else if (path.contains("/albuns")) {
+            return "Album";
+        }
+        return "a entidade";
+    }
+
+    private String getValidPropertiesForEntity(String entityType) {
+        switch (entityType) {
+            case "Artista":
+                return "id, nome, genero, createdAt, updatedAt";
+            case "Album":
+                return "id, titulo, dataLancamento, createdAt, updatedAt";
+            default:
+                return "consulte a documentação da API";
+        }
     }
 }
