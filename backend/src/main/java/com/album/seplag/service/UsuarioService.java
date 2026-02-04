@@ -1,13 +1,12 @@
 package com.album.seplag.service;
 
-import com.album.seplag.dto.*;
-import com.album.seplag.exception.ResourceNotFoundException;
-import com.album.seplag.exception.UsuarioJaExisteException;
-import com.album.seplag.model.Usuario;
-import com.album.seplag.repository.UsuarioRepository;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,9 +15,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.album.seplag.dto.AlterarSenhaAdminDTO;
+import com.album.seplag.dto.AlterarSenhaDTO;
+import com.album.seplag.dto.UsuarioCreateDTO;
+import com.album.seplag.dto.UsuarioDTO;
+import com.album.seplag.dto.UsuarioRegisterDTO;
+import com.album.seplag.dto.UsuarioUpdateDTO;
+import com.album.seplag.exception.ResourceNotFoundException;
+import com.album.seplag.exception.UsuarioJaExisteException;
+import com.album.seplag.model.Usuario;
+import com.album.seplag.repository.UsuarioRepository;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -53,9 +61,9 @@ public class UsuarioService implements UserDetailsService {
         return User.builder()
                 .username(usuario.getUsername())
                 .password(usuario.getPassword())
-                .roles(usuario.getRoles().stream()
-                        .map(role -> role.replace("ROLE_", ""))
-                        .collect(Collectors.joining(",")))
+                .authorities(usuario.getRoles().stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toSet()))
                 .build();
     }
 
@@ -223,6 +231,6 @@ public class UsuarioService implements UserDetailsService {
                 usuario.getRoles(),
                 usuario.getCreatedAt(),
                 usuario.getLastLogin()
-        );
+            );
     }
 }

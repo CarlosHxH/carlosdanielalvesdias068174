@@ -1,12 +1,8 @@
 package com.album.seplag.service;
 
-import com.album.seplag.config.JwtConfig;
-import com.album.seplag.dto.LoginRequest;
-import com.album.seplag.dto.LoginResponse;
-import com.album.seplag.dto.UsuarioRegisterDTO;
-import com.album.seplag.exception.InvalidCredentialsException;
-import com.album.seplag.exception.InvalidTokenException;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,8 +10,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.album.seplag.config.JwtConfig;
+import com.album.seplag.dto.LoginRequest;
+import com.album.seplag.dto.LoginResponse;
+import com.album.seplag.dto.UsuarioRegisterDTO;
+import com.album.seplag.exception.InvalidCredentialsException;
+import com.album.seplag.exception.InvalidTokenException;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -47,9 +49,7 @@ public class AuthService {
                 throw new InvalidCredentialsException();
             }
 
-            List<String> roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
+            List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
             String accessToken = jwtConfig.generateAccessToken(userDetails.getUsername(), roles);
             String refreshToken = jwtConfig.generateRefreshToken(userDetails.getUsername());
             usuarioService.atualizarLastLogin(request.username());

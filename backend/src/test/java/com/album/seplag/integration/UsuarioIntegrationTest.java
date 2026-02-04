@@ -1,9 +1,10 @@
 package com.album.seplag.integration;
 
-import com.album.seplag.dto.*;
-import com.album.seplag.model.Usuario;
-import com.album.seplag.repository.UsuarioRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Set;
+
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +14,19 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import com.album.seplag.dto.UsuarioCreateDTO;
+import com.album.seplag.dto.UsuarioUpdateDTO;
+import com.album.seplag.model.Usuario;
+import com.album.seplag.repository.UsuarioRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -60,7 +66,7 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "user1", roles = "USER")
+    @WithMockUser(username = "user1", roles = "ROLE_USER")
     void getMe_ShouldReturnUsuarioDTO_WhenAuthenticated() throws Exception {
         mockMvc.perform(get("/api/v1/usuarios/me"))
                 .andExpect(status().isOk())
@@ -76,7 +82,7 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "user1", roles = "USER")
+    @WithMockUser(username = "user1", roles = "ROLE_USER")
     void updateMe_ShouldUpdateProfile_WhenDataIsValid() throws Exception {
         UsuarioUpdateDTO dto = new UsuarioUpdateDTO("user1updated", "updated@example.com");
 
@@ -91,7 +97,7 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin1", roles = "ADMIN")
+    @WithMockUser(username = "admin1", roles = "ROLE_ADMIN")
     void findAll_ShouldReturnPage_WhenAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/usuarios")
                         .param("page", "0")
@@ -102,14 +108,14 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "user1", roles = "USER")
+    @WithMockUser(username = "user1", roles = "ROLE_USER")
     void findAll_ShouldReturn403_WhenNotAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/usuarios"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
-    @WithMockUser(username = "admin1", roles = "ADMIN")
+    @WithMockUser(username = "admin1", roles = "ROLE_ADMIN")
     void findById_ShouldReturnUsuario_WhenAdmin() throws Exception {
         mockMvc.perform(get("/api/v1/usuarios/{id}", usuarioComum.getId()))
                 .andExpect(status().isOk())
@@ -118,7 +124,7 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin1", roles = "ADMIN")
+    @WithMockUser(username = "admin1", roles = "ROLE_ADMIN")
     void create_ShouldCreateUsuario_WhenAdmin() throws Exception {
         UsuarioCreateDTO dto = new UsuarioCreateDTO("newuser", "password123", "new@example.com", Set.of("ROLE_USER"));
 
@@ -133,7 +139,7 @@ class UsuarioIntegrationTest {
     }
 
     @Test
-    @WithMockUser(username = "admin1", roles = "ADMIN")
+    @WithMockUser(username = "admin1", roles = "ROLE_ADMIN")
     void toggleAtivo_ShouldToggleStatus() throws Exception {
         mockMvc.perform(patch("/api/v1/usuarios/{id}/ativo", usuarioComum.getId()))
                 .andExpect(status().isOk())

@@ -1,22 +1,24 @@
 package com.album.seplag.config;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
-import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
 @Component
 public class JwtConfig {
 
-    private static final String CLAIM_ROLES_ACESS = "roles_acess";
+    private static final String CLAIM_ROLES_ACCESS = "roles_access";
     private static final String CLAIM_TYPE = "type";
     private static final String TYPE_REFRESH = "refresh";
 
@@ -43,7 +45,7 @@ public class JwtConfig {
                 .expiration(expiryDate);
 
         if (roles != null && !roles.isEmpty()) {
-            builder.claim(CLAIM_ROLES_ACESS, roles);
+            builder.claim(CLAIM_ROLES_ACCESS, roles);
         }
 
         return builder.signWith(getSigningKey()).compact();
@@ -97,11 +99,10 @@ public class JwtConfig {
         return (tokenUsername.equals(username) && !isTokenExpired(token));
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getRolesFromToken(String token) {
         try {
             Claims claims = getAllClaimsFromToken(token);
-            Object rolesObj = claims.get(CLAIM_ROLES_ACESS);
+            Object rolesObj = claims.get(CLAIM_ROLES_ACCESS);
             if (rolesObj instanceof List<?> list) {
                 List<String> roles = new ArrayList<>();
                 for (Object item : list) {
