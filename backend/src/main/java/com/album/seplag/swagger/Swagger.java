@@ -33,17 +33,7 @@ public class Swagger {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        var resolvedSchema = ModelConverters.getInstance()
-                .resolveAsResolvedSchema(new AnnotatedType(ErrorResponse.class));
-
-        Components components = new Components();
-        components.addSchemas("ErrorResponse", resolvedSchema.schema);
-        if (resolvedSchema.referencedSchemas != null) {
-            resolvedSchema.referencedSchemas.forEach(components::addSchemas);
-        }
-
         return new OpenAPI()
-                .components(components)
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .servers(List.of(
                         new Server()
@@ -66,34 +56,52 @@ public class Swagger {
 
     @Bean
     public OpenApiCustomizer openApiCustomizer() {
-        Schema<?> errorSchema = new Schema<>().$ref(ERROR_RESPONSE_REF);
-        MediaType errorMediaType = new MediaType().schema(errorSchema);
-        Content errorContent = new Content().addMediaType("application/json", errorMediaType);
+        return openApi -> {
+            ensureErrorResponseSchema(openApi);
 
-        ApiResponse unauthorized = new ApiResponse()
-                .description("Token inválido ou expirado")
-                .content(errorContent);
-        ApiResponse forbidden = new ApiResponse()
-                .description("Acesso negado (ex: usuário sem role ADMIN tentando endpoint restrito)")
-                .content(errorContent);
-        ApiResponse notFound = new ApiResponse()
-                .description("Recurso não encontrado (ex: ID de álbum ou artista inexistente)")
-                .content(errorContent);
-        ApiResponse unprocessable = new ApiResponse()
-                .description("Erro de validação (ex: senha curta demais, email inválido)")
-                .content(errorContent);
-        ApiResponse serverError = new ApiResponse()
-                .description("Erro interno do servidor")
-                .content(errorContent);
+            Schema<?> errorSchema = new Schema<>().$ref(ERROR_RESPONSE_REF);
+            MediaType errorMediaType = new MediaType().schema(errorSchema);
+            Content errorContent = new Content().addMediaType("application/json", errorMediaType);
 
-        return openApi -> openApi.getPaths().values().forEach(pathItem ->
-                pathItem.readOperations().forEach(operation -> {
-                    operation.getResponses()
-                            .addApiResponse("401", unauthorized)
-                            .addApiResponse("403", forbidden)
-                            .addApiResponse("404", notFound)
-                            .addApiResponse("422", unprocessable)
-                            .addApiResponse("500", serverError);
-                }));
+            ApiResponse unauthorized = new ApiResponse()
+                    .description("Token inválido ou expirado")
+                    .content(errorContent);
+            ApiResponse forbidden = new ApiResponse()
+                    .description("Acesso negado (ex: usuário sem role ADMIN tentando endpoint restrito)")
+                    .content(errorContent);
+            ApiResponse notFound = new ApiResponse()
+                    .description("Recurso não encontrado (ex: ID de álbum ou artista inexistente)")
+                    .content(errorContent);
+            ApiResponse unprocessable = new ApiResponse()
+                    .description("Erro de validação (ex: senha curta demais, email inválido)")
+                    .content(errorContent);
+            ApiResponse serverError = new ApiResponse()
+                    .description("Erro interno do servidor")
+                    .content(errorContent);
+
+            openApi.getPaths().values().forEach(pathItem ->
+                    pathItem.readOperations().forEach(operation -> {
+                        operation.getResponses()
+                                .addApiResponse("401", unauthorized)
+                                .addApiResponse("403", forbidden)
+                                .addApiResponse("404", notFound)
+                                .addApiResponse("422", unprocessable)
+                                .addApiResponse("500", serverError);
+                    }));
+        };
+    }
+
+    private void ensureErrorResponseSchema(OpenAPI openApi) {
+        if (openApi.getComponents() == null) {
+            openApi.setComponents(new Components());
+        }
+        if (openApi.getComponents().getSchemas() == null || !openApi.getComponents().getSchemas().containsKey("ErrorResponse")) {
+            var resolvedSchema = ModelConverters.getInstance()
+                    .resolveAsResolvedSchema(new AnnotatedType(ErrorResponse.class));
+            openApi.getComponents().addSchemas("ErrorResponse", resolvedSchema.schema);
+            if (resolvedSchema.referencedSchemas != null) {
+                resolvedSchema.referencedSchemas.forEach(openApi.getComponents()::addSchemas);
+            }
+        }
     }
 }
