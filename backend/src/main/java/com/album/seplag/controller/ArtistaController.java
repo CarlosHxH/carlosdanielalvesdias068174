@@ -3,12 +3,12 @@ package com.album.seplag.controller;
 import com.album.seplag.dto.ArtistaCreateDTO;
 import com.album.seplag.dto.ArtistaDTO;
 import com.album.seplag.dto.ArtistaUpdateDTO;
+import com.album.seplag.dto.PageResponseDTO;
 import com.album.seplag.service.ArtistaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,7 +29,7 @@ public class ArtistaController {
 
     @GetMapping
     @Operation(summary = "Listar artistas", description = "Lista artistas com paginação e filtro por nome")
-    public ResponseEntity<Page<ArtistaDTO>> findAll(
+    public ResponseEntity<PageResponseDTO<ArtistaDTO>> findAll(
             @RequestParam(required = false) String nome,
             @Parameter(description = "Número da página (começa em 0)")
             @RequestParam(defaultValue = "0") int page,
@@ -45,8 +45,7 @@ public class ArtistaController {
                 : Sort.Direction.ASC;
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
-        Page<ArtistaDTO> artistas = artistaService.findAll(nome, pageable);
-        return ResponseEntity.ok(artistas);
+        return ResponseEntity.ok(PageResponseDTO.of(artistaService.findAll(nome, pageable)));
     }
 
     @GetMapping("/{id}")

@@ -3,6 +3,7 @@ package com.album.seplag.controller;
 import com.album.seplag.dto.AlbumCreateDTO;
 import com.album.seplag.dto.AlbumDTO;
 import com.album.seplag.dto.AlbumUpdateDTO;
+import com.album.seplag.dto.PageResponseDTO;
 import com.album.seplag.dto.PresignedUrlResponse;
 import com.album.seplag.model.CapaAlbum;
 import com.album.seplag.service.AlbumService;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -39,7 +39,7 @@ public class AlbumController {
 
     @GetMapping
     @Operation(summary = "Listar álbuns", description = "Lista álbuns com paginação")
-    public ResponseEntity<Page<AlbumDTO>> findAll(
+    public ResponseEntity<PageResponseDTO<AlbumDTO>> findAll(
             @Parameter(description = "Número da página (começa em 0)")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Tamanho da página")
@@ -54,13 +54,12 @@ public class AlbumController {
                 : Sort.Direction.ASC;
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
-        Page<AlbumDTO> albuns = albumService.findAll(pageable);
-        return ResponseEntity.ok(albuns);
+        return ResponseEntity.ok(PageResponseDTO.of(albumService.findAll(pageable)));
     }
 
     @GetMapping("/artista/{artistaId}")
     @Operation(summary = "Listar álbuns por artista", description = "Lista álbuns de um artista específico")
-    public ResponseEntity<Page<AlbumDTO>> findByArtistaId(
+    public ResponseEntity<PageResponseDTO<AlbumDTO>> findByArtistaId(
             @PathVariable Long artistaId,
             @Parameter(description = "Número da página (começa em 0)")
             @RequestParam(defaultValue = "0") int page,
@@ -76,8 +75,7 @@ public class AlbumController {
                 : Sort.Direction.ASC;
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
-        Page<AlbumDTO> albuns = albumService.findByArtistaId(artistaId, pageable);
-        return ResponseEntity.ok(albuns);
+        return ResponseEntity.ok(PageResponseDTO.of(albumService.findByArtistaId(artistaId, pageable)));
     }
 
     @GetMapping("/{id}")
