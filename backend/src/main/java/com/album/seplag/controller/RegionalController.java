@@ -4,13 +4,14 @@ import com.album.seplag.dto.RegionalDTO;
 import com.album.seplag.service.RegionalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("${app.api.base}/regionais")
+@RequestMapping(value = "${app.api.base}/regionais", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Regionais", description = "Endpoints para gerenciamento de regionais")
 public class RegionalController {
 

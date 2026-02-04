@@ -25,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("${app.api.base}/albuns")
+@RequestMapping(value = "${app.api.base}/albuns", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Álbuns", description = "Endpoints para gerenciamento de álbuns")
 public class AlbumController {
 

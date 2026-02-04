@@ -15,13 +15,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.Map;
 
 @RestController
-@RequestMapping("${app.api.base}/auth")
+@RequestMapping(value = "${app.api.base}/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Autenticação", description = "Endpoints de autenticação")
 public class AuthController {
 

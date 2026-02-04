@@ -23,7 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.media.Content;
 
 @RestController
-@RequestMapping("${app.api.base}/artistas")
+@RequestMapping(value = "${app.api.base}/artistas", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Artistas", description = "Endpoints para gerenciamento de artistas")
 public class ArtistaController {
 
