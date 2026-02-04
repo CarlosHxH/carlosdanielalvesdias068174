@@ -80,7 +80,8 @@ public class ArtistaService {
             artista.getGenero(),
             artista.getBiografia(),
             artista.getCreatedAt(),
-            (long) artista.getAlbuns().size()
+            (long) artista.getAlbuns().size(),
+            artista.getFotoNomeArquivo() != null
         );
     }
 }

@@ -14,20 +14,12 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-    @Value("${cors.allowed-origin:http://localhost:3000}")
-    private String allowedOrigin;
 
     @Value("${app.api.base}")
     private String apiBasePath;
@@ -35,14 +27,17 @@ public class SecurityConfig {
     private final JwtConfig jwtConfig;
     private final UserDetailsService userDetailsService;
     private final AuthenticationEntryPointImpl authenticationEntryPoint;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     public SecurityConfig(
             JwtConfig jwtConfig,
             UserDetailsService userDetailsService,
-            AuthenticationEntryPointImpl authenticationEntryPoint) {
+            AuthenticationEntryPointImpl authenticationEntryPoint,
+            CorsConfigurationSource corsConfigurationSource) {
         this.jwtConfig = jwtConfig;
         this.userDetailsService = userDetailsService;
         this.authenticationEntryPoint = authenticationEntryPoint;
+        this.corsConfigurationSource = corsConfigurationSource;
     }
 
     @Bean
@@ -53,7 +48,7 @@ public class SecurityConfig {
 
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(getAuthWhitelist()).permitAll()
@@ -75,20 +70,6 @@ public class SecurityConfig {
             "/csrf",
             "/"
         };
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(allowedOrigin));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
     }
 
     @Bean

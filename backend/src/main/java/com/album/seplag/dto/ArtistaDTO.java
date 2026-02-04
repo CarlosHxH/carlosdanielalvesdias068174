@@ -8,5 +8,6 @@ public record ArtistaDTO(
     String genero,
     String biografia,
     LocalDateTime createdAt,
-    Long quantidadeAlbuns
+    Long quantidadeAlbuns,
+    boolean hasFoto
 ) {}

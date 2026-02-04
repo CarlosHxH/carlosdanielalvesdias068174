@@ -1,0 +1,4 @@
+# Variáveis de ambiente (contém credenciais)
+.env
+.env.local
+.env.*.local

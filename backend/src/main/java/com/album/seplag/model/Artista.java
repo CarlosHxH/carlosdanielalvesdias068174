@@ -29,6 +29,9 @@ public class Artista {
     @Column(columnDefinition = "TEXT")
     private String biografia;
 
+    @Column(name = "foto_nome_arquivo", length = 500)
+    private String fotoNomeArquivo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

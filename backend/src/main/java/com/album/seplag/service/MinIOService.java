@@ -4,8 +4,10 @@ import com.album.seplag.config.MinIOConfig;
 import com.album.seplag.dto.PresignedUrlResponse;
 import com.album.seplag.exception.ResourceNotFoundException;
 import com.album.seplag.model.Album;
+import com.album.seplag.model.Artista;
 import com.album.seplag.model.CapaAlbum;
 import com.album.seplag.repository.AlbumRepository;
+import com.album.seplag.repository.ArtistaRepository;
 import com.album.seplag.repository.CapaAlbumRepository;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
@@ -30,17 +32,20 @@ public class MinIOService {
     private final String bucketName;
     private final Long presignedUrlExpiration;
     private final AlbumRepository albumRepository;
+    private final ArtistaRepository artistaRepository;
     private final CapaAlbumRepository capaAlbumRepository;
 
     public MinIOService(MinIOConfig minIOConfig,
                        @Value("${minio.bucket-name}") String bucketName,
                        @Value("${minio.presigned-url-expiration}") Long presignedUrlExpiration,
                        AlbumRepository albumRepository,
+                       ArtistaRepository artistaRepository,
                        CapaAlbumRepository capaAlbumRepository) {
         this.minioClient = minIOConfig.minioClient();
         this.bucketName = bucketName;
         this.presignedUrlExpiration = presignedUrlExpiration;
         this.albumRepository = albumRepository;
+        this.artistaRepository = artistaRepository;
         this.capaAlbumRepository = capaAlbumRepository;
         initializeBucket();
     }
@@ -126,6 +131,65 @@ public class MinIOService {
         } catch (Exception e) {
             log.error("Erro ao gerar URL pré-assinada para capa ID {}: {}", capaId, e.getMessage(), e);
             throw new RuntimeException("Erro ao gerar URL pré-assinada", e);
+        }
+    }
+
+    @Transactional
+    public Artista uploadFotoArtista(Long artistaId, MultipartFile file) {
+        log.info("Fazendo upload de foto para artista ID: {}, arquivo: {}", artistaId, file.getOriginalFilename());
+        Artista artista = artistaRepository.findById(artistaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com id: " + artistaId));
+
+        try {
+            String fileName = UUID.randomUUID().toString() + "_" + (file.getOriginalFilename() != null ? file.getOriginalFilename() : "foto");
+            String objectName = "artistas/" + artistaId + "/" + fileName;
+
+            InputStream inputStream = file.getInputStream();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .stream(inputStream, file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+
+            log.debug("Foto enviada para MinIO com sucesso: {}", objectName);
+
+            artista.setFotoNomeArquivo(objectName);
+            Artista saved = artistaRepository.save(artista);
+            log.info("Foto do artista salva com sucesso - Artista ID: {}", artistaId);
+            return saved;
+        } catch (Exception e) {
+            log.error("Erro ao fazer upload da foto para artista ID {}: {}", artistaId, e.getMessage(), e);
+            throw new RuntimeException("Erro ao fazer upload da foto do artista", e);
+        }
+    }
+
+    public PresignedUrlResponse getPresignedUrlFotoArtista(Long artistaId) {
+        log.debug("Gerando URL pré-assinada para foto do artista ID: {}", artistaId);
+        Artista artista = artistaRepository.findById(artistaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com id: " + artistaId));
+
+        if (artista.getFotoNomeArquivo() == null || artista.getFotoNomeArquivo().isBlank()) {
+            throw new ResourceNotFoundException("Artista não possui foto cadastrada");
+        }
+
+        try {
+            String url = minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucketName)
+                            .object(artista.getFotoNomeArquivo())
+                            .expiry((int) (presignedUrlExpiration / 1000))
+                            .build()
+            );
+
+            log.debug("URL pré-assinada gerada com sucesso para foto do artista ID: {}", artistaId);
+            return new PresignedUrlResponse(url, presignedUrlExpiration);
+        } catch (Exception e) {
+            log.error("Erro ao gerar URL pré-assinada para foto do artista ID {}: {}", artistaId, e.getMessage(), e);
+            throw new RuntimeException("Erro ao gerar URL pré-assinada da foto", e);
         }
     }
 }

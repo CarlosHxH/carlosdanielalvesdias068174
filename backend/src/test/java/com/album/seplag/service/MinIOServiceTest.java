@@ -6,6 +6,7 @@ import com.album.seplag.model.Album;
 import com.album.seplag.model.Artista;
 import com.album.seplag.model.CapaAlbum;
 import com.album.seplag.repository.AlbumRepository;
+import com.album.seplag.repository.ArtistaRepository;
 import com.album.seplag.repository.CapaAlbumRepository;
 import io.minio.MinioClient;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,9 @@ class MinIOServiceTest {
     private AlbumRepository albumRepository;
 
     @Mock
+    private ArtistaRepository artistaRepository;
+
+    @Mock
     private CapaAlbumRepository capaAlbumRepository;
 
     @Mock
@@ -51,7 +55,7 @@ class MinIOServiceTest {
         when(minioClient.bucketExists(any())).thenReturn(true);
 
         minIOService = new MinIOService(minIOConfig, "test-bucket", 1800000L,
-                albumRepository, capaAlbumRepository);
+                albumRepository, artistaRepository, capaAlbumRepository);
 
         artista = new Artista();
         artista.setId(1L);

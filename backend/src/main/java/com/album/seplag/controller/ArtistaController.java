@@ -4,7 +4,9 @@ import com.album.seplag.dto.ArtistaCreateDTO;
 import com.album.seplag.dto.ArtistaDTO;
 import com.album.seplag.dto.ArtistaUpdateDTO;
 import com.album.seplag.dto.PageResponseDTO;
+import com.album.seplag.dto.PresignedUrlResponse;
 import com.album.seplag.service.ArtistaService;
+import com.album.seplag.service.MinIOService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,8 +15,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import io.swagger.v3.oas.annotations.media.Content;
 
 @RestController
 @RequestMapping("${app.api.base}/artistas")
@@ -22,9 +28,11 @@ import org.springframework.web.bind.annotation.*;
 public class ArtistaController {
 
     private final ArtistaService artistaService;
+    private final MinIOService minIOService;
 
-    public ArtistaController(ArtistaService artistaService) {
+    public ArtistaController(ArtistaService artistaService, MinIOService minIOService) {
         this.artistaService = artistaService;
+        this.minIOService = minIOService;
     }
 
     @GetMapping
@@ -74,6 +82,27 @@ public class ArtistaController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         artistaService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/foto")
+    @Operation(summary = "Upload de foto", description = "Faz upload da foto do artista (substitui anterior)")
+    public ResponseEntity<ArtistaDTO> uploadFoto(
+            @PathVariable Long id,
+            @Parameter(
+                description = "Arquivo de imagem para upload",
+                required = true,
+                content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)
+            )
+            @RequestParam("file") MultipartFile file) {
+        minIOService.uploadFotoArtista(id, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(artistaService.findById(id));
+    }
+
+    @GetMapping("/{id}/foto/presigned-url")
+    @Operation(summary = "URL da foto", description = "Retorna URL pré-assinada para exibir a foto (404 se não houver)")
+    public ResponseEntity<PresignedUrlResponse> getPresignedUrlFoto(@PathVariable Long id) {
+        PresignedUrlResponse response = minIOService.getPresignedUrlFotoArtista(id);
+        return ResponseEntity.ok(response);
     }
 }
 
