@@ -51,13 +51,14 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void login_ShouldReturnToken_WhenCredentialsAreValid() {
+    void login_ShouldReturnTokens_WhenCredentialsAreValid() {
         LoginRequest request = new LoginRequest("testuser", "password123");
 
         LoginResponse response = authService.login(request);
 
         assertNotNull(response);
-        assertNotNull(response.token());
+        assertNotNull(response.accessToken());
+        assertNotNull(response.refreshToken());
         assertEquals("Bearer", response.type());
         assertNotNull(response.expiresIn());
     }
@@ -80,16 +81,29 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void register_ShouldReturnToken_WhenDataIsValid() {
+    void register_ShouldReturnTokens_WhenDataIsValid() {
         var request = new UsuarioRegisterDTO("newuser", "password123", "newuser@example.com");
 
         LoginResponse response = authService.register(request);
 
         assertNotNull(response);
-        assertNotNull(response.token());
+        assertNotNull(response.accessToken());
+        assertNotNull(response.refreshToken());
         assertEquals("Bearer", response.type());
         assertNotNull(response.expiresIn());
         assertTrue(usuarioRepository.findByUsername("newuser").isPresent());
+    }
+
+    @Test
+    void refreshToken_ShouldReturnNewAccessToken_WhenRefreshTokenIsValid() {
+        LoginResponse loginResponse = authService.login(new LoginRequest("testuser", "password123"));
+
+        LoginResponse refreshResponse = authService.refreshToken(loginResponse.refreshToken());
+
+        assertNotNull(refreshResponse);
+        assertNotNull(refreshResponse.accessToken());
+        assertNotNull(refreshResponse.refreshToken());
+        assertNotEquals(loginResponse.accessToken(), refreshResponse.accessToken());
     }
 }
 

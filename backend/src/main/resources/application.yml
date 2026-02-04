@@ -35,6 +35,7 @@ app:
 jwt:
   secret: ${JWT_SECRET:seplag-secret-key-change-in-production}
   expiration: ${JWT_EXPIRATION:300000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

@@ -7,11 +7,15 @@ import com.album.seplag.dto.UsuarioRegisterDTO;
 import com.album.seplag.exception.InvalidCredentialsException;
 import com.album.seplag.exception.InvalidTokenException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -43,10 +47,14 @@ public class AuthService {
                 throw new InvalidCredentialsException();
             }
 
-            String token = jwtConfig.generateToken(userDetails.getUsername());
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+            String accessToken = jwtConfig.generateAccessToken(userDetails.getUsername(), roles);
+            String refreshToken = jwtConfig.generateRefreshToken(userDetails.getUsername());
             usuarioService.atualizarLastLogin(request.username());
             log.info("Login bem-sucedido para usuário: {}", request.username());
-            return new LoginResponse(token, "Bearer", jwtConfig.getExpiration());
+            return new LoginResponse(accessToken, refreshToken, jwtConfig.getExpiration());
         } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
             log.info("Falha no login - usuário não encontrado: {}", request.username());
             throw new InvalidCredentialsException();
@@ -80,8 +88,10 @@ public class AuthService {
     public LoginResponse register(UsuarioRegisterDTO dto) {
         usuarioService.register(dto);
         usuarioService.atualizarLastLogin(dto.username());
-        String token = jwtConfig.generateToken(dto.username());
+        List<String> roles = List.of("ROLE_USER");
+        String accessToken = jwtConfig.generateAccessToken(dto.username(), roles);
+        String refreshToken = jwtConfig.generateRefreshToken(dto.username());
         log.info("Registro e login automático para usuário: {}", dto.username());
-        return new LoginResponse(token, "Bearer", jwtConfig.getExpiration());
+        return new LoginResponse(accessToken, refreshToken, jwtConfig.getExpiration());
     }
 }

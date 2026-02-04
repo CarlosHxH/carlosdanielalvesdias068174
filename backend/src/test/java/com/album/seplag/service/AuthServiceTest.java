@@ -16,7 +16,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.List;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,17 +58,20 @@ class AuthServiceTest {
         LoginRequest request = new LoginRequest("testuser", "password");
         when(userDetailsService.loadUserByUsername("testuser")).thenReturn(userDetails);
         when(passwordEncoder.matches("password", userDetails.getPassword())).thenReturn(true);
-        when(jwtConfig.generateToken("testuser")).thenReturn("jwt-token");
+        when(jwtConfig.generateAccessToken(eq("testuser"), anyList())).thenReturn("access-token");
+        when(jwtConfig.generateRefreshToken("testuser")).thenReturn("refresh-token");
         when(jwtConfig.getExpiration()).thenReturn(300000L);
         doNothing().when(usuarioService).atualizarLastLogin("testuser");
 
         LoginResponse response = authService.login(request);
 
         assertNotNull(response);
-        assertEquals("jwt-token", response.token());
+        assertEquals("access-token", response.accessToken());
+        assertEquals("refresh-token", response.refreshToken());
         assertEquals("Bearer", response.type());
         assertEquals(300000L, response.expiresIn());
-        verify(jwtConfig).generateToken("testuser");
+        verify(jwtConfig).generateAccessToken(eq("testuser"), anyList());
+        verify(jwtConfig).generateRefreshToken("testuser");
     }
 
     @Test
@@ -85,27 +93,31 @@ class AuthServiceTest {
     }
 
     @Test
-    void refreshToken_ShouldReturnNewToken_WhenTokenIsValid() {
-        String token = "valid-token";
-        when(jwtConfig.getUsernameFromToken(token)).thenReturn("testuser");
-        when(jwtConfig.validateToken(token, "testuser")).thenReturn(true);
-        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(userDetails);
-        when(jwtConfig.generateToken("testuser")).thenReturn("new-token");
+    void refreshToken_ShouldReturnNewTokens_WhenRefreshTokenIsValid() {
+        String refreshToken = "valid-refresh-token";
+        var usuarioDTO = new com.album.seplag.dto.UsuarioDTO(1L, "testuser", "test@example.com", true, Set.of("ROLE_USER"), null, null);
+        when(jwtConfig.getUsernameFromToken(refreshToken)).thenReturn("testuser");
+        when(jwtConfig.validateRefreshToken(refreshToken, "testuser")).thenReturn(true);
+        when(usuarioService.findByUsername("testuser")).thenReturn(usuarioDTO);
+        when(jwtConfig.generateAccessToken(eq("testuser"), anyList())).thenReturn("new-access-token");
+        when(jwtConfig.generateRefreshToken("testuser")).thenReturn("new-refresh-token");
         when(jwtConfig.getExpiration()).thenReturn(300000L);
 
-        LoginResponse response = authService.refreshToken(token);
+        LoginResponse response = authService.refreshToken(refreshToken);
 
         assertNotNull(response);
-        assertEquals("new-token", response.token());
+        assertEquals("new-access-token", response.accessToken());
+        assertEquals("new-refresh-token", response.refreshToken());
         assertEquals("Bearer", response.type());
-        verify(jwtConfig).generateToken("testuser");
+        verify(jwtConfig).generateAccessToken(eq("testuser"), anyList());
+        verify(jwtConfig).generateRefreshToken("testuser");
     }
 
     @Test
     void refreshToken_ShouldThrowInvalidTokenException_WhenTokenIsInvalid() {
         String token = "invalid-token";
         when(jwtConfig.getUsernameFromToken(token)).thenReturn("testuser");
-        when(jwtConfig.validateToken(token, "testuser")).thenReturn(false);
+        when(jwtConfig.validateRefreshToken(token, "testuser")).thenReturn(false);
 
         assertThrows(InvalidTokenException.class, () -> authService.refreshToken(token));
     }

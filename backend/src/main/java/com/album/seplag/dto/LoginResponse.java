@@ -1,11 +1,12 @@
 package com.album.seplag.dto;
 
 public record LoginResponse(
-    String token,
+    String accessToken,
+    String refreshToken,
     String type,
     Long expiresIn
 ) {
-    public LoginResponse(String token, Long expiresIn) {
-        this(token, "Bearer", expiresIn);
+    public LoginResponse(String accessToken, String refreshToken, Long expiresIn) {
+        this(accessToken, refreshToken, "Bearer", expiresIn);
     }
 }
