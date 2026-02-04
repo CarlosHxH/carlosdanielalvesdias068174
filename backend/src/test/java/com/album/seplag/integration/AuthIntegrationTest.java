@@ -117,22 +117,6 @@ class AuthIntegrationTest {
 
     @Test
     @WithMockUser(username = "testuser", roles = "USER")
-    void getMe_ShouldReturnUsuarioDTO_WhenAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$.ativo").value(true));
-    }
-
-    @Test
-    void getMe_ShouldReturn401_WhenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @WithMockUser(username = "testuser", roles = "USER")
     void logout_ShouldReturn200_WhenAuthenticated() throws Exception {
         mockMvc.perform(post("/api/v1/auth/logout"))
                 .andExpect(status().isOk())

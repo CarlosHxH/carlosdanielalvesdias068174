@@ -3,19 +3,15 @@ package com.album.seplag.controller;
 import com.album.seplag.dto.ErrorResponse;
 import com.album.seplag.dto.LoginRequest;
 import com.album.seplag.dto.LoginResponse;
-import com.album.seplag.dto.UsuarioDTO;
 import com.album.seplag.dto.UsuarioRegisterDTO;
 import com.album.seplag.service.AuthService;
-import com.album.seplag.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -23,15 +19,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "${app.api.base}/auth", produces = MediaType.APPLICATION_JSON_VALUE)
-@Tag(name = "Autenticação", description = "Endpoints de autenticação")
+@Tag(name = "Autenticação", description = "Endpoints de autenticação (login, registro, refresh, logout)")
 public class AuthController {
 
     private final AuthService authService;
-    private final UsuarioService usuarioService;
 
-    public AuthController(AuthService authService, UsuarioService usuarioService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.usuarioService = usuarioService;
     }
 
     @PostMapping("/login")
@@ -72,25 +66,9 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/me")
-    @Operation(summary = "Usuário logado", description = "Retorna os dados do usuário logado (baseado no token)")
-    public ResponseEntity<UsuarioDTO> getMe() {
-        String username = getCurrentUsername();
-        UsuarioDTO usuario = usuarioService.findByUsername(username);
-        return ResponseEntity.ok(usuario);
-    }
-
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Invalida o token atual. O cliente deve descartar os tokens localmente.")
     public ResponseEntity<Map<String, String>> logout() {
         return ResponseEntity.ok(Map.of("message", "Logout realizado com sucesso"));
-    }
-
-    private String getCurrentUsername() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("Usuário não autenticado");
-        }
-        return authentication.getName();
     }
 }
