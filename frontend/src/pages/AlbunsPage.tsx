@@ -15,8 +15,7 @@ import { Label } from '@/components/ui/label';
 
 const SORT_OPTIONS = [
   { value: 'titulo', label: 'Título' },
-  { value: 'dataLancamento', label: 'Data lançamento' },
-  { value: 'id', label: 'ID' },
+  { value: 'dataLancamento', label: 'Data lançamento' }
 ] as const;
 
 /**
