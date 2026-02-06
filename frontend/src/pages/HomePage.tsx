@@ -36,6 +36,7 @@ export function HomePage() {
   const [nomeNovo, setNomeNovo] = useState('');
   const [tipoNovo, setTipoNovo] = useState<TipoArtista>('CANTOR');
   const [descricaoNovo, setDescricaoNovo] = useState('');
+  const [fotoNovo, setFotoNovo] = useState<File | null>(null);
   const [salvando, setSalvando] = useState(false);
   const navigate = useNavigate();
 
@@ -82,10 +83,14 @@ export function HomePage() {
     setSalvando(true);
     try {
       const criado = await artistFacadeService.criarArtista(nomeNovo.trim(), descricaoNovo || undefined, tipoNovo);
+      if (fotoNovo) {
+        await artistFacadeService.uploadFotoArtista(criado.id, fotoNovo);
+      }
       setShowNovoArtista(false);
       setNomeNovo('');
       setTipoNovo('CANTOR');
       setDescricaoNovo('');
+      setFotoNovo(null);
       setPagina(0);
       await carregar(0);
       navigate(`/artistas/${criado.id}`);
@@ -111,7 +116,14 @@ export function HomePage() {
           )}
         </header>
 
-        <Modal open={showNovoArtista} onClose={() => setShowNovoArtista(false)} title="Novo Artista">
+        <Modal
+          open={showNovoArtista}
+          onClose={() => {
+            setShowNovoArtista(false);
+            setFotoNovo(null);
+          }}
+          title="Novo Artista"
+        >
           <form onSubmit={handleCriarArtista} className="space-y-4">
             <div>
               <Label htmlFor="nome-artista" className="text-slate-300">Nome</Label>
@@ -144,6 +156,16 @@ export function HomePage() {
                 onChange={(e) => setDescricaoNovo(e.target.value)}
                 placeholder="Biografia ou descrição"
                 className="mt-1 w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white min-h-[80px]"
+              />
+            </div>
+            <div>
+              <Label htmlFor="foto-artista" className="text-slate-300">Foto (opcional)</Label>
+              <input
+                id="foto-artista"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFotoNovo(e.target.files?.[0] ?? null)}
+                className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer"
               />
             </div>
             <div className="flex justify-end gap-2">

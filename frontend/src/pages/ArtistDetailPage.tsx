@@ -168,7 +168,7 @@ export default function ArtistDetailPage() {
                       setShowFotoModal(true);
                     }}
                   >
-                    {artista.fotoUrl || artista.fotoNomeArquivo ? 'Editar' : 'Editar/Adicionar Foto'}
+                    {artista.fotoUrl || artista.fotoNomeArquivo ? 'Editar' : 'Editar'}
                   </button>
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded-md"
