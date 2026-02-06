@@ -8,6 +8,7 @@ import Modal from '@/components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { showApiErrorToast } from '@/lib/errorUtils';
 import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,9 +115,11 @@ export function HomePage() {
           <h1 className="text-2xl text-white font-bold">Artistas</h1>
           {usuario && (
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white"
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
               onClick={() => setShowNovoArtista(true)}
             >
+              <Plus className="size-4" />
               Novo Artista
             </Button>
           )}
@@ -188,9 +191,9 @@ export function HomePage() {
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
+                className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700"
                 onClick={() => setShowNovoArtista(false)}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-200"
               >
                 Cancelar
               </Button>

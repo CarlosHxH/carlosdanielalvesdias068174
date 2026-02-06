@@ -5,10 +5,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { Album, Artista } from '@/types/types';
 import Modal from '@/components/common/Modal';
 import { showApiErrorToast } from '@/lib/errorUtils';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import AlbumCardSkeleton from '@/components/common/AlbumCardSkeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -174,7 +180,8 @@ export default function AlbunsPage() {
         <h1 className="text-2xl text-white font-bold">Álbuns</h1>
         {usuario && (
           <Button
-            className="bg-green-600 hover:bg-green-700 text-white"
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
             onClick={() => {
               setEditingAlbum(null);
               setTituloNovo('');
@@ -184,6 +191,7 @@ export default function AlbunsPage() {
               setShowNovoAlbum(true);
             }}
           >
+            <Plus className="size-4" />
             Novo Álbum
           </Button>
         )}
@@ -257,9 +265,9 @@ export default function AlbunsPage() {
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
+              className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700"
               onClick={fecharModal}
-              className="bg-slate-700 hover:bg-slate-600 text-slate-200"
             >
               Cancelar
             </Button>
@@ -351,26 +359,38 @@ export default function AlbunsPage() {
                     <p className="text-sm text-slate-400 mt-1">{album.artistaNome}</p>
                   </div>
                   {usuario && (
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50"
-                        onClick={() => abrirEdicao(album)}
-                        aria-label="Editar álbum"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700/50"
-                        onClick={() => handleDeletarAlbum(album.id)}
-                        aria-label="Excluir álbum"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
+                    <TooltipProvider delayDuration={300}>
+                      <div className="flex shrink-0 gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-emerald-400 hover:bg-slate-700/80 rounded-md"
+                              onClick={() => abrirEdicao(album)}
+                              aria-label="Editar álbum"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Editar álbum</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700/80 rounded-md"
+                              onClick={() => handleDeletarAlbum(album.id)}
+                              aria-label="Excluir álbum"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Excluir álbum</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   )}
                 </div>
               </CardContent>

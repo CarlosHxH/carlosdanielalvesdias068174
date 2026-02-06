@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { artistFacadeService } from '@/services/ArtistFacadeService';
 import { albumFacadeService } from '@/services/AlbumFacadeService';
 import { authService } from '@/services/AuthService';
 import type { Artista, Album, Usuario, TipoArtista } from '@/types/types';
 import Modal from '@/components/common/Modal';
 import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { showApiErrorToast } from '@/lib/errorUtils';
 
 /**
@@ -174,11 +182,12 @@ export default function ArtistDetailPage() {
             </div>
 
             <div>
-              {/* Botão para adicionar/editar foto do artista */}
               {usuario ? (
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md transition-colors"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700 hover:border-slate-500 hover:text-white"
                     onClick={() => {
                       setNomeArtista(artista.nome);
                       setDescricaoArtista((artista.biografia ?? artista.descricao) ?? '');
@@ -187,21 +196,27 @@ export default function ArtistDetailPage() {
                       setShowFotoModal(true);
                     }}
                   >
-                    {artista.fotoUrl || artista.fotoNomeArquivo ? 'Editar' : 'Editar'}
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-md transition-colors"
+                    <Pencil className="size-4" />
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
                     onClick={() => abrirFormularioNovo()}
                   >
+                    <Plus className="size-4" />
                     Novo Álbum
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md transition-colors"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-red-950/50 hover:border-red-800 hover:text-red-400"
                     onClick={handleDeleteArtista}
                     aria-label="Excluir artista"
                   >
-                    Excluir artista
-                  </button>
+                    <Trash2 className="size-4" />
+                    Excluir
+                  </Button>
                 </div>
               ) : (
                 <div className="text-slate-400 text-sm">Faça login para criar álbuns</div>
@@ -263,19 +278,20 @@ export default function ArtistDetailPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700"
                 onClick={fecharFormulario}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/30 transition-colors"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
               >
                 Salvar
-              </button>
+              </Button>
             </div>
           </form>
         </Modal>
@@ -377,20 +393,21 @@ export default function ArtistDetailPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
+                <Button
                   type="button"
+                  variant="outline"
+                  className="border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700"
                   onClick={() => setShowFotoModal(false)}
                 >
                   Cancelar
-                </button>
-                <button
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/30 transition-colors disabled:opacity-50"
+                </Button>
+                <Button
                   type="submit"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 disabled:opacity-50"
                   disabled={uploadingFoto}
                 >
                   {uploadingFoto ? 'Salvando...' : 'Salvar'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -401,41 +418,57 @@ export default function ArtistDetailPage() {
 
           {carregando && <div className="text-slate-400">Carregando álbuns...</div>}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {albuns.length === 0 && !carregando ? (
-              <div className="text-slate-400">Nenhum álbum encontrado para este artista.</div>
-            ) : (
-              albuns.map((album) => (
-                <div key={album.id} className="bg-slate-900/60 border border-slate-700 rounded overflow-hidden">
-                  <div className="h-44 w-full bg-gray-800 flex items-center justify-center relative">
-                    <AlbumCover album={album} />
-                    <div className="absolute top-2 right-2 flex gap-2">
+          <TooltipProvider delayDuration={300}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {albuns.length === 0 && !carregando ? (
+                <div className="text-slate-400">Nenhum álbum encontrado para este artista.</div>
+              ) : (
+                albuns.map((album) => (
+                  <div key={album.id} className="bg-slate-900/60 border border-slate-700 rounded-lg overflow-hidden group">
+                    <div className="h-44 w-full bg-gray-800 flex items-center justify-center relative">
+                      <AlbumCover album={album} />
                       {usuario && (
-                        <>
-                          <button
-                            onClick={() => abrirFormularioEdicao(album)}
-                            className="bg-yellow-600 text-white px-2 py-1 rounded text-xs"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => handleDeleteAlbum(album.id)}
-                            className="bg-red-600 text-white px-2 py-1 rounded text-xs"
-                          >
-                            Excluir
-                          </button>
-                        </>
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-emerald-400 hover:bg-slate-700/80"
+                                onClick={() => abrirFormularioEdicao(album)}
+                                aria-label="Editar álbum"
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar álbum</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700/80"
+                                onClick={() => handleDeleteAlbum(album.id)}
+                                aria-label="Excluir álbum"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Excluir álbum</TooltipContent>
+                          </Tooltip>
+                        </div>
                       )}
                     </div>
+                    <div className="p-3">
+                      <div className="text-white font-medium truncate">{album.titulo}</div>
+                      <div className="text-slate-400 text-sm mt-1">{album.dataLancamento ?? ''}</div>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <div className="text-white font-medium truncate">{album.titulo}</div>
-                    <div className="text-slate-400 text-sm mt-1">{album.dataLancamento ?? ''}</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </TooltipProvider>
         </section>
       </div>
     </div>
