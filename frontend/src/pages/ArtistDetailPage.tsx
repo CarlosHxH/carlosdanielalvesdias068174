@@ -322,7 +322,7 @@ export default function ArtistDetailPage() {
                   <div className="h-44 w-full bg-gray-800 flex items-center justify-center relative">
                     <AlbumCover album={album} />
                     <div className="absolute top-2 right-2 flex gap-2">
-                      {usuario && usuario.roles && usuario.roles.includes('ROLE_ADMIN') && (
+                      {usuario && (
                         <>
                           <button
                             onClick={() => abrirFormularioEdicao(album)}

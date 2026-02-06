@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { artistFacadeService } from '@/services/ArtistFacadeService';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Artista, TipoArtista } from '@/types/types';
 import ArtistCard from '@/components/common/ArtistCard';
 import ArtistCardSkeleton from '@/components/common/ArtistCardSkeleton';
+import Modal from '@/components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errorUtils';
@@ -20,6 +22,7 @@ const SORT_OPTIONS = [
  * Cards com busca por nome, ordenação asc/desc e paginação
  */
 export function HomePage() {
+  const { user: usuario } = useAuth();
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [pagina, setPagina] = useState(0);
   const [tamanho] = useState(12);
@@ -29,6 +32,11 @@ export function HomePage() {
   const [tipoFiltro, setTipoFiltro] = useState<TipoArtista | ''>('');
   const [sort, setSort] = useState<'nome' | 'id' | 'createdAt'>('nome');
   const [ordenacao, setOrdenacao] = useState<'ASC' | 'DESC'>('ASC');
+  const [showNovoArtista, setShowNovoArtista] = useState(false);
+  const [nomeNovo, setNomeNovo] = useState('');
+  const [tipoNovo, setTipoNovo] = useState<TipoArtista>('CANTOR');
+  const [descricaoNovo, setDescricaoNovo] = useState('');
+  const [salvando, setSalvando] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,12 +76,86 @@ export function HomePage() {
     navigate(`/artistas/${id}`);
   }
 
+  async function handleCriarArtista(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nomeNovo.trim()) return;
+    setSalvando(true);
+    try {
+      const criado = await artistFacadeService.criarArtista(nomeNovo.trim(), descricaoNovo || undefined, tipoNovo);
+      setShowNovoArtista(false);
+      setNomeNovo('');
+      setTipoNovo('CANTOR');
+      setDescricaoNovo('');
+      setPagina(0);
+      await carregar(0);
+      navigate(`/artistas/${criado.id}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Erro ao criar artista'));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   return (
     <div>
       <div className="max-w-7xl mx-auto">
         <header className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl text-white font-bold">Artistas</h1>
+          {usuario && (
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => setShowNovoArtista(true)}
+            >
+              Novo Artista
+            </Button>
+          )}
         </header>
+
+        <Modal open={showNovoArtista} onClose={() => setShowNovoArtista(false)} title="Novo Artista">
+          <form onSubmit={handleCriarArtista} className="space-y-4">
+            <div>
+              <Label htmlFor="nome-artista" className="text-slate-300">Nome</Label>
+              <Input
+                id="nome-artista"
+                value={nomeNovo}
+                onChange={(e) => setNomeNovo(e.target.value)}
+                required
+                placeholder="Nome do artista"
+                className="mt-1 bg-slate-700 border-slate-600 text-white"
+              />
+            </div>
+            <div>
+              <Label htmlFor="tipo-artista" className="text-slate-300">Tipo</Label>
+              <select
+                id="tipo-artista"
+                value={tipoNovo}
+                onChange={(e) => setTipoNovo(e.target.value as TipoArtista)}
+                className="mt-1 w-full h-9 rounded-md border border-slate-600 bg-slate-700 px-3 text-white"
+              >
+                <option value="CANTOR">Cantor</option>
+                <option value="BANDA">Banda</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="desc-artista" className="text-slate-300">Descrição (opcional)</Label>
+              <textarea
+                id="desc-artista"
+                value={descricaoNovo}
+                onChange={(e) => setDescricaoNovo(e.target.value)}
+                placeholder="Biografia ou descrição"
+                className="mt-1 w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white min-h-[80px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setShowNovoArtista(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={salvando}>
+                {salvando ? 'Salvando...' : 'Criar'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
 
         <div className="mb-6 flex flex-wrap items-end gap-4">
           <div className="flex-1 min-w-[200px]">

@@ -104,7 +104,6 @@ export function AppLayout() {
       <SidebarInset>
         <header className="h-14 border-b border-slate-800 flex items-center gap-4 px-4 lg:px-6 sticky top-0 bg-slate-950 z-10">
           <SidebarTrigger className="text-slate-400 hover:bg-slate-800 hover:text-white" />
-          <h1 className="text-lg font-semibold text-white truncate">Music Albums</h1>
         </header>
 
         <div className="flex-1 p-6 overflow-auto">

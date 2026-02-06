@@ -1,12 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { albumFacadeService } from '@/services/AlbumFacadeService';
 import { artistFacadeService } from '@/services/ArtistFacadeService';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Album, Artista } from '@/types/types';
+import Modal from '@/components/common/Modal';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errorUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AlbumCardSkeleton from '@/components/common/AlbumCardSkeleton';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const SORT_OPTIONS = [
@@ -20,6 +23,7 @@ const SORT_OPTIONS = [
  * Grid de cards com capa, título e artista. Paginação, ordenação e filtro por artista.
  */
 export default function AlbunsPage() {
+  const { user: usuario } = useAuth();
   const [albuns, setAlbuns] = useState<Album[]>([]);
   const [artistas, setArtistas] = useState<Artista[]>([]);
   const [pagina, setPagina] = useState(0);
@@ -28,6 +32,11 @@ export default function AlbunsPage() {
   const [sort, setSort] = useState<'titulo' | 'dataLancamento' | 'id'>('titulo');
   const [direction, setDirection] = useState<'ASC' | 'DESC'>('ASC');
   const [artistaId, setArtistaId] = useState<number | ''>('');
+  const [showNovoAlbum, setShowNovoAlbum] = useState(false);
+  const [tituloNovo, setTituloNovo] = useState('');
+  const [artistaIdNovo, setArtistaIdNovo] = useState<number | ''>('');
+  const [dataLancamentoNovo, setDataLancamentoNovo] = useState('');
+  const [salvando, setSalvando] = useState(false);
   const tamanho = 12;
 
   const carregar = useCallback(
@@ -75,11 +84,93 @@ export default function AlbunsPage() {
     };
   }, [carregar]);
 
+  async function handleCriarAlbum(e: React.FormEvent) {
+    e.preventDefault();
+    if (!tituloNovo.trim() || !artistaIdNovo || typeof artistaIdNovo !== 'number') return;
+    setSalvando(true);
+    try {
+      await albumFacadeService.criarAlbum(
+        tituloNovo.trim(),
+        artistaIdNovo,
+        dataLancamentoNovo || undefined
+      );
+      setShowNovoAlbum(false);
+      setTituloNovo('');
+      setArtistaIdNovo('');
+      setDataLancamentoNovo('');
+      setPagina(0);
+      await carregar(0);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Erro ao criar álbum'));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   return (
     <div>
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl text-white font-bold">Álbuns</h1>
+        {usuario && (
+          <Button
+            className="bg-green-600 hover:bg-green-700 text-white"
+            onClick={() => setShowNovoAlbum(true)}
+          >
+            Novo Álbum
+          </Button>
+        )}
       </header>
+
+      <Modal open={showNovoAlbum} onClose={() => setShowNovoAlbum(false)} title="Novo Álbum">
+        <form onSubmit={handleCriarAlbum} className="space-y-4">
+          <div>
+            <Label htmlFor="artista-album" className="text-slate-300">Artista</Label>
+            <select
+              id="artista-album"
+              value={artistaIdNovo}
+              onChange={(e) => setArtistaIdNovo(e.target.value === '' ? '' : Number(e.target.value))}
+              required
+              className="mt-1 w-full h-9 rounded-md border border-slate-600 bg-slate-700 px-3 text-white"
+            >
+              <option value="">Selecione o artista</option>
+              {artistas.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="titulo-album" className="text-slate-300">Título</Label>
+            <Input
+              id="titulo-album"
+              value={tituloNovo}
+              onChange={(e) => setTituloNovo(e.target.value)}
+              required
+              placeholder="Título do álbum"
+              className="mt-1 bg-slate-700 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label htmlFor="data-album" className="text-slate-300">Data de lançamento (opcional)</Label>
+            <Input
+              id="data-album"
+              type="date"
+              value={dataLancamentoNovo}
+              onChange={(e) => setDataLancamentoNovo(e.target.value)}
+              className="mt-1 bg-slate-700 border-slate-600 text-white"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowNovoAlbum(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Criar'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="mb-6 flex flex-wrap items-end gap-4">
         <div>
