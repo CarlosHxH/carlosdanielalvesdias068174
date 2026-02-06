@@ -7,11 +7,13 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${cors.allowed-origin:http://localhost:3000}")
+    @Value("${cors.allowed-origin:http://localhost:5173,http://localhost:3000}")
     private String allowedOrigin;
 
     @Override
@@ -22,7 +24,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws/albuns").setAllowedOriginPatterns(allowedOrigin).withSockJS();
+        String[] origins = Arrays.stream(allowedOrigin.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        registry.addEndpoint("/ws/albuns")
+                .setAllowedOriginPatterns(origins.length > 0 ? origins : new String[]{"*"})
+                .withSockJS();
     }
 }
 

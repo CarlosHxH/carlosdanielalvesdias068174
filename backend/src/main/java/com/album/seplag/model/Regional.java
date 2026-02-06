@@ -21,6 +21,9 @@ public class Regional {
     @Column(nullable = false, length = 200)
     private String nome;
 
+    @Column(name = "external_id")
+    private Long externalId;
+
     @Column(nullable = false)
     private Boolean ativo = true;
 
@@ -31,6 +34,14 @@ public class Regional {
     @PreUpdate
     protected void onUpdate() {
         dataSincronizacao = LocalDateTime.now();
+    }
+
+    public Long getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(Long externalId) {
+        this.externalId = externalId;
     }
 }
 

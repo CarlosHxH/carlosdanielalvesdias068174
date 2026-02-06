@@ -6,7 +6,6 @@ import com.album.seplag.dto.ArtistaUpdateDTO;
 import com.album.seplag.exception.ResourceNotFoundException;
 import com.album.seplag.model.Artista;
 import com.album.seplag.repository.ArtistaRepository;
-import com.album.seplag.service.MinIOService;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

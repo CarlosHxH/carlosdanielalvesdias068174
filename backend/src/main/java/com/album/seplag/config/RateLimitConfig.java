@@ -30,5 +30,9 @@ public class RateLimitConfig {
                 .addLimit(limit)
                 .build();
     }
+
+    public int getRequestsPerMinute() {
+        return requestsPerMinute;
+    }
 }
 

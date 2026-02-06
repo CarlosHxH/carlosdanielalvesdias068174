@@ -4,6 +4,7 @@ import com.album.seplag.dto.AlbumCreateDTO;
 import com.album.seplag.dto.AlbumDTO;
 import com.album.seplag.dto.AlbumUpdateDTO;
 import com.album.seplag.dto.CapaAlbumDTO;
+import com.album.seplag.dto.NotificationDTO;
 import com.album.seplag.exception.ResourceNotFoundException;
 import com.album.seplag.model.Album;
 import com.album.seplag.model.Artista;
@@ -22,9 +23,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -84,11 +87,17 @@ public class AlbumService {
             Album saved = albumRepository.save(album);
             
             log.info("Álbum criado com sucesso - ID: {}, Título: {}", saved.getId(), saved.getTitulo());
-            
-            // Notificar via WebSocket
-            messagingTemplate.convertAndSend("/topic/albuns", toDTO(saved));
-            
-            return toDTO(saved);
+
+            AlbumDTO savedDTO = toDTO(saved);
+            NotificationDTO notification = new NotificationDTO(
+                    "ALBUM_CREATED",
+                    "Álbum \"" + saved.getTitulo() + "\" criado",
+                    Instant.now(),
+                    savedDTO
+            );
+            messagingTemplate.convertAndSend("/topic/albuns", notification);
+
+            return savedDTO;
         } catch (Exception e) {
             log.error("Erro ao criar álbum: {}", e.getMessage(), e);
             throw e;
@@ -97,18 +106,24 @@ public class AlbumService {
 
     @Transactional
     public AlbumDTO update(Long id, AlbumUpdateDTO dto) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado com id: " + id));
+        Album album = albumRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado com id: " + id));
         
         album.setTitulo(dto.titulo());
         album.setDataLancamento(dto.dataLancamento());
         
-        Artista artista = artistaRepository.findById(dto.artistaId())
-                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com id: " + dto.artistaId()));
+        Artista artista = artistaRepository.findById(dto.artistaId()).orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com id: " + dto.artistaId()));
         album.setArtista(artista);
-        
+
         Album saved = albumRepository.save(album);
-        return toDTO(saved);
+        AlbumDTO savedDTO = toDTO(saved);
+        NotificationDTO notification = new NotificationDTO(
+                "ALBUM_UPDATED",
+                "Álbum \"" + saved.getTitulo() + "\" atualizado",
+                Instant.now(),
+                savedDTO
+        );
+        messagingTemplate.convertAndSend("/topic/albuns", notification);
+        return savedDTO;
     }
 
     @Transactional
@@ -116,8 +131,17 @@ public class AlbumService {
         log.info("Deletando álbum com ID: {}", id);
         Album album = albumRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Álbum não encontrado com id: " + id));
+        String titulo = album.getTitulo();
         albumRepository.delete(album);
         log.info("Álbum deletado com sucesso - ID: {}", id);
+
+        NotificationDTO notification = new NotificationDTO(
+                "ALBUM_DELETED",
+                "Álbum \"" + titulo + "\" removido",
+                Instant.now(),
+                Map.<String, Object>of("id", id)
+        );
+        messagingTemplate.convertAndSend("/topic/albuns", notification);
     }
 
     @Transactional
@@ -153,11 +177,11 @@ public class AlbumService {
 
         List<CapaAlbumDTO> capas = album.getCapas().stream().map(this::toCapaDTO).collect(Collectors.toList());
     
-        String artistaFoto = null;
+        // String artistaFoto = null;
     
-        if (album.getArtista().getFotoNomeArquivo() != null) {
-            artistaFoto = minIOService.getPresignedUrlFotoArtista(album.getArtista().getId()).url();
-        }
+        // if (album.getArtista().getFotoNomeArquivo() != null) {
+        //     artistaFoto = minIOService.getPresignedUrlFotoArtista(album.getArtista().getId()).url();
+        // }
     
         return new AlbumDTO(
                 album.getId(),
@@ -166,8 +190,8 @@ public class AlbumService {
                 album.getArtista().getNome(),
                 album.getDataLancamento(),
                 album.getCreatedAt(),
-                capas,
-                artistaFoto
+                capas
+                // artistaFoto
         );
     }
 }
