@@ -4,8 +4,7 @@ import { artistFacadeService } from '@/services/ArtistFacadeService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Album, Artista } from '@/types/types';
 import Modal from '@/components/common/Modal';
-import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { showApiErrorToast } from '@/lib/errorUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AlbumCardSkeleton from '@/components/common/AlbumCardSkeleton';
@@ -55,7 +54,7 @@ export default function AlbunsPage() {
           await albumFacadeService.carregarAlbuns(p, tamanho, sort, direction);
         }
       } catch (error) {
-        toast.error(getErrorMessage(error, 'Falha ao carregar álbuns'));
+        showApiErrorToast(error, 'Falha ao carregar álbuns');
       } finally {
         setCarregando(false);
       }
@@ -64,8 +63,8 @@ export default function AlbunsPage() {
   );
 
   useEffect(() => {
-    artistFacadeService.carregarArtistas(0, 500).catch(() => {
-      toast.error(getErrorMessage(null, 'Falha ao carregar artistas'));
+    artistFacadeService.carregarArtistas(0, 500).catch((err) => {
+      showApiErrorToast(err, 'Falha ao carregar artistas');
     });
   }, []);
 
@@ -101,7 +100,7 @@ export default function AlbunsPage() {
       setPagina(0);
       await carregar(0);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao criar álbum'));
+      showApiErrorToast(err, 'Erro ao criar álbum');
     } finally {
       setSalvando(false);
     }

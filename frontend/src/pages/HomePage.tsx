@@ -7,7 +7,7 @@ import ArtistCardSkeleton from '@/components/common/ArtistCardSkeleton';
 import Modal from '@/components/common/Modal';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { showApiErrorToast } from '@/lib/errorUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ export function HomePage() {
   const [nome, setNome] = useState('');
   const [nomeDebounced, setNomeDebounced] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState<TipoArtista | ''>('');
+  const [tipoFiltroDebounced, setTipoFiltroDebounced] = useState<TipoArtista | ''>('');
   const [sort, setSort] = useState<'nome' | 'id' | 'createdAt'>('nome');
   const [ordenacao, setOrdenacao] = useState<'ASC' | 'DESC'>('ASC');
   const [showNovoArtista, setShowNovoArtista] = useState(false);
@@ -45,6 +46,11 @@ export function HomePage() {
     return () => clearTimeout(t);
   }, [nome]);
 
+  useEffect(() => {
+    const t = setTimeout(() => setTipoFiltroDebounced(tipoFiltro), 400);
+    return () => clearTimeout(t);
+  }, [tipoFiltro]);
+
   const carregar = useCallback(
     async (p: number) => {
       setCarregando(true);
@@ -55,15 +61,15 @@ export function HomePage() {
           nomeDebounced || undefined,
           ordenacao,
           sort,
-          tipoFiltro || undefined
+          tipoFiltroDebounced || undefined
         );
       } catch (error) {
-        toast.error(getErrorMessage(error, 'Falha ao carregar artistas'));
+        showApiErrorToast(error, 'Falha ao carregar artistas');
       } finally {
         setCarregando(false);
       }
     },
-    [tamanho, nomeDebounced, ordenacao, sort, tipoFiltro]
+    [tamanho, nomeDebounced, ordenacao, sort, tipoFiltroDebounced]
   );
 
   useEffect(() => {
@@ -95,7 +101,7 @@ export function HomePage() {
       await carregar(0);
       navigate(`/artistas/${criado.id}`);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao criar artista'));
+      showApiErrorToast(err, 'Erro ao criar artista');
     } finally {
       setSalvando(false);
     }

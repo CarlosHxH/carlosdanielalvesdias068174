@@ -1,6 +1,9 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+
+const RATE_LIMIT_RETRY_DELAY_MS = 6000; // 6 segundos (1/10 de minuto)
 
 /**
  * Instância do Axios configurada com interceptadores
@@ -84,6 +87,31 @@ api.interceptors.response.use(
       }
     }
 
+    // Rate limit 429: retry único após delay
+    if (error.response?.status === 429 && originalRequest && !originalRequest._retry429) {
+      originalRequest._retry429 = true;
+      const retryAfter = error.response?.headers?.['retry-after'];
+      const delayMs = retryAfter
+        ? Math.max(1000, parseInt(retryAfter, 10) * 1000)
+        : RATE_LIMIT_RETRY_DELAY_MS;
+      const delaySec = Math.ceil(delayMs / 1000);
+
+      toast.warning(`Muitas requisições. Aguarde ${delaySec} segundos e tente novamente.`, {
+        id: 'rate-limit',
+        duration: delayMs,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return api(originalRequest);
+    }
+
+    // 429 após retry: exibir toast e marcar para evitar duplicata no componente
+    if (error.response?.status === 429) {
+      (error as { _rateLimitHandled?: boolean })._rateLimitHandled = true;
+      toast.error('Ainda em rate limit. Tente novamente em alguns instantes.', {
+        id: 'rate-limit',
+      });
+    }
     return Promise.reject(error);
   }
 );

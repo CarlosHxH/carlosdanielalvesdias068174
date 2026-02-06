@@ -6,7 +6,7 @@ import { authService } from '@/services/AuthService';
 import type { Artista, Album, Usuario, TipoArtista } from '@/types/types';
 import Modal from '@/components/common/Modal';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { getErrorMessage, showApiErrorToast } from '@/lib/errorUtils';
 
 /**
  * Página de Detalhe do Artista
@@ -47,7 +47,7 @@ export default function ArtistDetailPage() {
         await artistFacadeService.carregarArtistaById(artistId);
         await albumFacadeService.carregarAlbunsPorArtista(artistId, 0, 12);
       } catch (error) {
-        toast.error(getErrorMessage(error, 'Falha ao carregar dados do artista'));
+        showApiErrorToast(error, 'Falha ao carregar dados do artista');
       } finally {
         setCarregando(false);
       }
@@ -106,7 +106,7 @@ export default function ArtistDetailPage() {
       await albumFacadeService.carregarAlbunsPorArtista(artistId, 0, 12);
       fecharFormulario();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao salvar álbum'));
+      showApiErrorToast(err, 'Erro ao salvar álbum');
     } finally {
       setCarregando(false);
     }
@@ -119,7 +119,7 @@ export default function ArtistDetailPage() {
       await albumFacadeService.deletarAlbum(albumId);
       await albumFacadeService.carregarAlbunsPorArtista(artistId, 0, 12);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao deletar álbum'));
+      showApiErrorToast(err, 'Erro ao deletar álbum');
     }
   }
 
@@ -256,7 +256,7 @@ export default function ArtistDetailPage() {
                   await artistFacadeService.carregarArtistaById(artistId);
                   setShowFotoModal(false);
                 } catch (err) {
-                  toast.error(getErrorMessage(err, 'Erro ao atualizar artista'));
+                  showApiErrorToast(err, 'Erro ao atualizar artista');
                 } finally {
                   setUploadingFoto(false);
                 }

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Music, Loader2, Eye, EyeOff } from 'lucide-react';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { getErrorMessage, showApiErrorToast } from '@/lib/errorUtils';
 import { toast } from 'sonner';
 
 /**
@@ -87,7 +87,7 @@ const AuthPage: React.FC = () => {
       });
       toast.success('Conta criada com sucesso!');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Não foi possível criar a conta'));
+      showApiErrorToast(error, 'Não foi possível criar a conta');
     } finally {
       setIsLoading(false);
     }

@@ -58,11 +58,13 @@ export function AppLayout() {
         collapsible="icon"
         className="border-r border-slate-700"
       >
-        <SidebarHeader className="border-b border-slate-700 h-14 flex items-center justify-center gap-2 px-4 bg-slate-900/50">
+        <SidebarHeader className="border-b border-slate-700 h-14 md:h-auto flex items-center justify-center gap-2 px-4 bg-slate-900/50">
+        <div className="flex items-center justify-center gap-2">
           <Music2 className="size-6 shrink-0 text-emerald-400" />
           <span className="text-slate-100 font-bold text-lg truncate group-data-[collapsible=icon]:hidden">
             Music Albums
           </span>
+        </div>
         </SidebarHeader>
 
         <SidebarContent>

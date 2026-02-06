@@ -2,9 +2,21 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import api from '../utils/api';
 import type { Album, CapaAlbum, BackendPageResponse } from '../types/types';
 
+const CACHE_TTL_MS = 60_000; // 1 minuto
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+function isCacheValid<T>(entry: CacheEntry<T> | undefined): entry is CacheEntry<T> {
+  return !!entry && Date.now() - entry.timestamp < CACHE_TTL_MS;
+}
+
 /**
  * Facade Service para Álbuns
  * Centraliza toda a lógica de estado e comunicação com API para álbuns
+ * Usa cache para reduzir requisições duplicadas
  */
 export class AlbumFacadeService {
   private albuns$ = new BehaviorSubject<Album[]>([]);
@@ -13,6 +25,26 @@ export class AlbumFacadeService {
   private pagina$ = new BehaviorSubject<number>(0);
   private tamanho$ = new BehaviorSubject<number>(10);
   private totalPaginas$ = new BehaviorSubject<number>(0);
+
+  private cacheAlbuns = new Map<string, CacheEntry<{ content: Album[]; totalPages: number }>>();
+  private cacheAlbumById = new Map<number, CacheEntry<Album>>();
+
+  private buildCacheKey(
+    pagina: number,
+    tamanho: number,
+    sort: string,
+    direction: string,
+    artistaId?: number
+  ): string {
+    return artistaId != null
+      ? `artista_${artistaId}_${pagina}_${tamanho}_${sort}_${direction}`
+      : `all_${pagina}_${tamanho}_${sort}_${direction}`;
+  }
+
+  private invalidarCache(): void {
+    this.cacheAlbuns.clear();
+    this.cacheAlbumById.clear();
+  }
 
   // Observables públicos
   obterAlbuns(): Observable<Album[]> {
@@ -44,6 +76,16 @@ export class AlbumFacadeService {
     sort: string = 'id',
     direction: 'ASC' | 'DESC' = 'ASC'
   ): Promise<void> {
+    const key = this.buildCacheKey(pagina, tamanho, sort, direction);
+    const cached = this.cacheAlbuns.get(key);
+    if (isCacheValid(cached)) {
+      this.albuns$.next(cached.data.content);
+      this.pagina$.next(pagina);
+      this.tamanho$.next(tamanho);
+      this.totalPaginas$.next(cached.data.totalPages);
+      return;
+    }
+
     this.carregando$.next(true);
     try {
       const response = await api.get<BackendPageResponse<Album>>('/albuns', {
@@ -55,10 +97,12 @@ export class AlbumFacadeService {
         },
       });
 
-      this.albuns$.next(response.data.content);
+      const { content, totalPages } = response.data;
+      this.cacheAlbuns.set(key, { data: { content, totalPages }, timestamp: Date.now() });
+      this.albuns$.next(content);
       this.pagina$.next(pagina);
       this.tamanho$.next(tamanho);
-      this.totalPaginas$.next(response.data.totalPages);
+      this.totalPaginas$.next(totalPages);
     } catch (error) {
       console.error('Erro ao carregar álbuns:', error);
       throw error;
@@ -77,6 +121,16 @@ export class AlbumFacadeService {
     sort: string = 'id',
     direction: 'ASC' | 'DESC' = 'ASC'
   ): Promise<void> {
+    const key = this.buildCacheKey(pagina, tamanho, sort, direction, artistaId);
+    const cached = this.cacheAlbuns.get(key);
+    if (isCacheValid(cached)) {
+      this.albuns$.next(cached.data.content);
+      this.pagina$.next(pagina);
+      this.tamanho$.next(tamanho);
+      this.totalPaginas$.next(cached.data.totalPages);
+      return;
+    }
+
     this.carregando$.next(true);
     try {
       const response = await api.get<BackendPageResponse<Album>>(
@@ -91,10 +145,12 @@ export class AlbumFacadeService {
         }
       );
 
-      this.albuns$.next(response.data.content);
+      const { content, totalPages } = response.data;
+      this.cacheAlbuns.set(key, { data: { content, totalPages }, timestamp: Date.now() });
+      this.albuns$.next(content);
       this.pagina$.next(pagina);
       this.tamanho$.next(tamanho);
-      this.totalPaginas$.next(response.data.totalPages);
+      this.totalPaginas$.next(totalPages);
     } catch (error) {
       console.error('Erro ao carregar álbuns:', error);
       throw error;
@@ -107,11 +163,19 @@ export class AlbumFacadeService {
    * Carrega um álbum por ID
    */
   async carregarAlbumById(id: number): Promise<Album> {
+    const cached = this.cacheAlbumById.get(id);
+    if (isCacheValid(cached)) {
+      this.selecionado$.next(cached.data);
+      return cached.data;
+    }
+
     this.carregando$.next(true);
     try {
       const response = await api.get<Album>(`/albuns/${id}`);
-      this.selecionado$.next(response.data);
-      return response.data;
+      const album = response.data;
+      this.cacheAlbumById.set(id, { data: album, timestamp: Date.now() });
+      this.selecionado$.next(album);
+      return album;
     } catch (error) {
       console.error('Erro ao carregar álbum:', error);
       throw error;
@@ -129,6 +193,7 @@ export class AlbumFacadeService {
     dataLancamento?: string
   ): Promise<Album> {
     try {
+      this.invalidarCache();
       const response = await api.post<Album>('/albuns', {
         titulo,
         artistaId,
@@ -151,6 +216,7 @@ export class AlbumFacadeService {
     dataLancamento?: string
   ): Promise<Album> {
     try {
+      this.invalidarCache();
       const response = await api.put<Album>(`/albuns/${id}`, {
         titulo,
         artistaId,
@@ -170,6 +236,7 @@ export class AlbumFacadeService {
    */
   async deletarAlbum(id: number): Promise<void> {
     try {
+      this.invalidarCache();
       await api.delete(`/albuns/${id}`);
       if (this.selecionado$.value?.id === id) {
         this.selecionado$.next(null);
@@ -185,6 +252,7 @@ export class AlbumFacadeService {
    */
   async uploadCapas(albumId: number, files: File[]): Promise<CapaAlbum[]> {
     try {
+      this.invalidarCache();
       const formData = new FormData();
       files.forEach((file) => {
         formData.append('files', file);
@@ -225,6 +293,7 @@ export class AlbumFacadeService {
    * Limpa o estado de álbuns
    */
   limpar(): void {
+    this.invalidarCache();
     this.albuns$.next([]);
     this.selecionado$.next(null);
     this.pagina$.next(0);

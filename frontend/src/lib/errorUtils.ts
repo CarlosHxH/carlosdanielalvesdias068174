@@ -1,3 +1,20 @@
+import { toast } from 'sonner';
+
+const RATE_LIMIT_TOAST_ID = 'rate-limit';
+
+/**
+ * Exibe toast de erro para falhas de API.
+ * Evita toasts duplicados: 429 usa id fixo; erros já tratados pelo interceptor são ignorados.
+ */
+export function showApiErrorToast(error: unknown, fallback = 'Ocorreu um erro inesperado'): void {
+  const err = error as { _rateLimitHandled?: boolean; response?: { status?: number } };
+  if (err?._rateLimitHandled) return;
+
+  const msg = getErrorMessage(error, fallback);
+  const is429 = err?.response?.status === 429;
+  toast.error(msg, { id: is429 ? RATE_LIMIT_TOAST_ID : undefined });
+}
+
 /**
  * Extrai mensagem de erro de respostas da API (Axios) ou erros genéricos.
  * Compatível com ErrorResponse do backend: { timestamp, status, error, message, path }
@@ -7,8 +24,15 @@ export function getErrorMessage(error: unknown, fallback = 'Ocorreu um erro ines
   if (!error) return fallback;
 
   // Erro Axios com response (ErrorResponse do backend usa campo 'message')
-  const err = error as { response?: { data?: unknown; status?: number } };
+  const err = error as { response?: { data?: unknown; status?: number; headers?: Record<string, string> } };
   const data = err.response?.data;
+
+  // 429 Rate Limit: mensagem amigável
+  if (err.response?.status === 429) {
+    const retryAfter = err.response?.headers?.['retry-after'];
+    const segundos = retryAfter ? parseInt(retryAfter, 10) : 6;
+    return `Muitas requisições. Aguarde ${segundos} segundos e tente novamente.`;
+  }
 
   if (typeof data === 'string') return data;
   if (data && typeof data === 'object') {

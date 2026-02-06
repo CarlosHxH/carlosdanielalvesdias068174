@@ -2,9 +2,21 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import api from '@/utils/api';
 import type { Artista, PaginatedResponse, TipoArtista } from '@/types/types';
 
+const CACHE_TTL_MS = 60_000; // 1 minuto
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+function isCacheValid<T>(entry: CacheEntry<T> | undefined): entry is CacheEntry<T> {
+  return !!entry && Date.now() - entry.timestamp < CACHE_TTL_MS;
+}
+
 /**
  * Facade Service para Artistas
  * Centraliza toda a lógica de estado e comunicação com API para artistas
+ * Usa cache para reduzir requisições duplicadas (ex: AlbunsPage + HomePage)
  */
 export class ArtistFacadeService {
   private artistas$ = new BehaviorSubject<Artista[]>([]);
@@ -15,6 +27,25 @@ export class ArtistFacadeService {
   private nome$ = new BehaviorSubject<string>('');
   private ordenacao$ = new BehaviorSubject<'ASC' | 'DESC'>('ASC');
   private totalPaginas$ = new BehaviorSubject<number>(0);
+
+  private cacheArtistas = new Map<string, CacheEntry<{ content: Artista[]; totalPages: number }>>();
+  private cacheArtistaById = new Map<number, CacheEntry<Artista>>();
+
+  private buildCacheKey(
+    pagina: number,
+    tamanho: number,
+    nome?: string,
+    ordenacao?: string,
+    sort?: string,
+    tipo?: TipoArtista
+  ): string {
+    return `${pagina}_${tamanho}_${nome ?? ''}_${ordenacao ?? 'ASC'}_${sort ?? 'nome'}_${tipo ?? ''}`;
+  }
+
+  private invalidarCache(): void {
+    this.cacheArtistas.clear();
+    this.cacheArtistaById.clear();
+  }
 
   // Observables públicos
   obterArtistas(): Observable<Artista[]> {
@@ -39,6 +70,7 @@ export class ArtistFacadeService {
 
   /**
    * Carrega lista de artistas com paginação e filtros
+   * Usa cache para evitar requisições duplicadas (ex: AlbunsPage carregando dropdown)
    */
   async carregarArtistas(
     pagina: number = 0,
@@ -48,6 +80,18 @@ export class ArtistFacadeService {
     sort: string = 'nome',
     tipo?: TipoArtista
   ): Promise<void> {
+    const key = this.buildCacheKey(pagina, tamanho, nome, ordenacao ?? 'ASC', sort, tipo);
+    const cached = this.cacheArtistas.get(key);
+    if (isCacheValid(cached)) {
+      this.artistas$.next(cached.data.content);
+      this.pagina$.next(pagina);
+      this.tamanho$.next(tamanho);
+      this.totalPaginas$.next(cached.data.totalPages);
+      if (nome) this.nome$.next(nome);
+      if (ordenacao) this.ordenacao$.next(ordenacao);
+      return;
+    }
+
     this.carregando$.next(true);
     try {
       const response = await api.get<PaginatedResponse<Artista>>('/artistas', {
@@ -61,10 +105,12 @@ export class ArtistFacadeService {
         },
       });
 
-      this.artistas$.next(response.data.content);
+      const { content, totalPages } = response.data;
+      this.cacheArtistas.set(key, { data: { content, totalPages }, timestamp: Date.now() });
+      this.artistas$.next(content);
       this.pagina$.next(pagina);
       this.tamanho$.next(tamanho);
-      this.totalPaginas$.next(response.data.totalPages);
+      this.totalPaginas$.next(totalPages);
       if (nome) this.nome$.next(nome);
       if (ordenacao) this.ordenacao$.next(ordenacao);
     } catch (error) {
@@ -77,13 +123,22 @@ export class ArtistFacadeService {
 
   /**
    * Carrega um artista por ID
+   * Usa cache para evitar requisições ao navegar de volta para o mesmo artista
    */
   async carregarArtistaById(id: number): Promise<Artista> {
+    const cached = this.cacheArtistaById.get(id);
+    if (isCacheValid(cached)) {
+      this.selecionado$.next(cached.data);
+      return cached.data;
+    }
+
     this.carregando$.next(true);
     try {
       const response = await api.get<Artista>(`/artistas/${id}`);
-      this.selecionado$.next(response.data);
-      return response.data;
+      const artista = response.data;
+      this.cacheArtistaById.set(id, { data: artista, timestamp: Date.now() });
+      this.selecionado$.next(artista);
+      return artista;
     } catch (error) {
       console.error('Erro ao carregar artista:', error);
       throw error;
@@ -97,6 +152,7 @@ export class ArtistFacadeService {
    */
   async criarArtista(nome: string, descricao?: string, tipoArtista?: TipoArtista): Promise<Artista> {
     try {
+      this.invalidarCache();
       const response = await api.post<Artista>('/artistas', {
         nome,
         biografia: descricao,
@@ -119,6 +175,7 @@ export class ArtistFacadeService {
     tipoArtista?: TipoArtista
   ): Promise<Artista> {
     try {
+      this.invalidarCache();
       const response = await api.put<Artista>(`/artistas/${id}`, {
         nome,
         biografia: descricao,
@@ -138,6 +195,7 @@ export class ArtistFacadeService {
    */
   async deletarArtista(id: number): Promise<void> {
     try {
+      this.invalidarCache();
       await api.delete(`/artistas/${id}`);
       if (this.selecionado$.value?.id === id) {
         this.selecionado$.next(null);
@@ -153,6 +211,7 @@ export class ArtistFacadeService {
    */
   async uploadFotoArtista(id: number, file: File): Promise<Artista> {
     try {
+      this.invalidarCache();
       const formData = new FormData();
       formData.append('file', file);
 

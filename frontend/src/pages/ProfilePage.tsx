@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Eye, EyeOff, User, Pencil, Shield } from 'lucide-react';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { getErrorMessage, showApiErrorToast } from '@/lib/errorUtils';
 import { toast } from 'sonner';
 
 /**
@@ -53,7 +53,7 @@ export default function ProfilePage() {
       await authService.atualizarPerfil(editUsername.trim(), editEmail.trim());
       toast.success('Perfil atualizado com sucesso!');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Falha ao atualizar perfil'));
+      showApiErrorToast(error, 'Falha ao atualizar perfil');
     } finally {
       setSavingProfile(false);
     }
@@ -81,7 +81,7 @@ export default function ProfilePage() {
       setNovaSenha('');
       setConfirmarSenha('');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Falha ao alterar senha'));
+      showApiErrorToast(error, 'Falha ao alterar senha');
     } finally {
       setSavingPassword(false);
     }

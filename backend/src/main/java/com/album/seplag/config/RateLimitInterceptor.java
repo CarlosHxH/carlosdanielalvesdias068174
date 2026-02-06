@@ -3,6 +3,7 @@ package com.album.seplag.config;
 import java.io.IOException;
 import java.util.Map;
 
+import io.github.bucket4j.EstimationProbe;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,6 +43,15 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         } else {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");
+
+            // Header Retry-After: segundos até próximo refill (frontend usa para retry)
+            EstimationProbe probe = bucket.estimateAbilityToConsume(1);
+            long nanosToWait = probe.getNanosToWaitForRefill();
+            if (nanosToWait > 0) {
+                long secondsToWait = (nanosToWait + 999_999_999) / 1_000_000_000;
+                response.setHeader("Retry-After", String.valueOf(secondsToWait));
+            }
+
             try {
                 int limit = rateLimitConfig.getRequestsPerMinute();
                 response.getWriter().write("{\"message\":\"Rate limit exceeded. Maximum " + limit + " requests per minute.\"}");

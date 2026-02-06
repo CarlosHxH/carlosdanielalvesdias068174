@@ -3,7 +3,7 @@ import { regionalFacadeService } from '@/services/RegionalFacadeService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Regional } from '@/types/types';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/errorUtils';
+import { showApiErrorToast } from '@/lib/errorUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -81,7 +81,7 @@ export default function RegionaisPage() {
     try {
       await regionalFacadeService.carregarRegionais();
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Falha ao carregar regionais'));
+      showApiErrorToast(error, 'Falha ao carregar regionais');
     } finally {
       setCarregando(false);
     }
@@ -93,7 +93,7 @@ export default function RegionaisPage() {
       await regionalFacadeService.sincronizar();
       toast.success('Sincronização concluída');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Falha ao sincronizar regionais'));
+      showApiErrorToast(error, 'Falha ao sincronizar regionais');
     } finally {
       setCarregando(false);
     }
