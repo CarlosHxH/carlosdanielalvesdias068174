@@ -230,6 +230,23 @@ export class ArtistFacadeService {
   }
 
   /**
+   * Remove a foto do artista
+   */
+  async deletarFotoArtista(id: number): Promise<void> {
+    try {
+      this.invalidarCache();
+      await api.delete(`/artistas/${id}/foto`);
+      const atual = this.selecionado$.value;
+      if (atual?.id === id && atual) {
+        this.selecionado$.next({ ...atual, fotoUrl: undefined, fotoNomeArquivo: undefined });
+      }
+    } catch (error) {
+      console.error('Erro ao remover foto do artista:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtém URL pré-assinada da foto do artista
    */
   async obterUrlFotoArtista(id: number): Promise<string | null> {

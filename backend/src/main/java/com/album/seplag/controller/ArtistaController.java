@@ -107,6 +107,13 @@ public class ArtistaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(artistaService.findById(id));
     }
 
+    @DeleteMapping("/{id}/foto")
+    @Operation(summary = "Remover foto", description = "Remove a foto do artista")
+    public ResponseEntity<Void> deleteFoto(@PathVariable Long id) {
+        minIOService.deleteFotoArtista(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}/foto/presigned-url")
     @Operation(summary = "URL da foto", description = "Retorna URL pré-assinada para exibir a foto (404 se não houver)")
     public ResponseEntity<PresignedUrlResponse> getPresignedUrlFoto(@PathVariable Long id) {

@@ -154,6 +154,11 @@ public class AlbumService {
         return result;
     }
 
+    @Transactional
+    public void deleteCapa(Long albumId, Long capaId) {
+        minIOService.deleteCapa(albumId, capaId);
+    }
+
     private CapaAlbumDTO toCapaDTO(CapaAlbum capa) {
 
         String url = minIOService.getPresignedUrl(capa.getAlbum().getId(), capa.getId()).url();

@@ -6,8 +6,8 @@ import ArtistCard from '@/components/common/ArtistCard';
 import ArtistCardSkeleton from '@/components/common/ArtistCardSkeleton';
 import Modal from '@/components/common/Modal';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { showApiErrorToast } from '@/lib/errorUtils';
+import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -173,6 +173,17 @@ export function HomePage() {
                 onChange={(e) => setFotoNovo(e.target.files?.[0] ?? null)}
                 className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
               />
+              {fotoNovo && (
+                <ImagePreviewGrid
+                  items={[
+                    {
+                      id: 'foto-novo',
+                      url: URL.createObjectURL(fotoNovo),
+                      onRemove: () => setFotoNovo(null),
+                    },
+                  ]}
+                />
+              )}
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <Button

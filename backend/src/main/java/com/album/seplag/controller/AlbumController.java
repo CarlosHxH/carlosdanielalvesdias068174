@@ -123,6 +123,15 @@ public class AlbumController {
         return ResponseEntity.status(HttpStatus.CREATED).body(capas);
     }
 
+    @DeleteMapping("/{albumId}/capa/{capaId}")
+    @Operation(summary = "Excluir capa", description = "Remove uma capa do álbum")
+    public ResponseEntity<Void> deleteCapa(
+            @PathVariable Long albumId,
+            @PathVariable Long capaId) {
+        albumService.deleteCapa(albumId, capaId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{albumId}/capa/{capaId}/presigned-url")
     @Operation(summary = "Obter URL pré-assinada", description = "Gera URL pré-assinada para acesso à capa (expira em 30 minutos)")
     public ResponseEntity<PresignedUrlResponse> getPresignedUrl(

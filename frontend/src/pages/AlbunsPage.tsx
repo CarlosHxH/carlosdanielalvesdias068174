@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { albumFacadeService } from '@/services/AlbumFacadeService';
 import { artistFacadeService } from '@/services/ArtistFacadeService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +6,7 @@ import type { Album, Artista } from '@/types/types';
 import Modal from '@/components/common/Modal';
 import { showApiErrorToast } from '@/lib/errorUtils';
 import { Pencil, Trash2 } from 'lucide-react';
+import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AlbumCardSkeleton from '@/components/common/AlbumCardSkeleton';
@@ -38,8 +39,21 @@ export default function AlbunsPage() {
   const [artistaIdNovo, setArtistaIdNovo] = useState<number | ''>('');
   const [dataLancamentoNovo, setDataLancamentoNovo] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [capasToDelete, setCapasToDelete] = useState<number[]>([]);
   const [salvando, setSalvando] = useState(false);
   const tamanho = 12;
+
+  const filePreviewItems = useMemo(() => {
+    return selectedFiles.map((f, i) => ({
+      id: `new-${i}-${f.name}`,
+      url: URL.createObjectURL(f),
+      onRemove: () => setSelectedFiles((prev) => prev.filter((_, j) => j !== i)),
+    }));
+  }, [selectedFiles]);
+
+  useEffect(() => {
+    return () => filePreviewItems.forEach((item) => URL.revokeObjectURL(item.url));
+  }, [filePreviewItems]);
 
   const carregar = useCallback(
     async (p: number) => {
@@ -92,6 +106,7 @@ export default function AlbunsPage() {
     setArtistaIdNovo(album.artistaId);
     setDataLancamentoNovo(album.dataLancamento ?? '');
     setSelectedFiles([]);
+    setCapasToDelete([]);
     setShowNovoAlbum(true);
   }
 
@@ -102,6 +117,7 @@ export default function AlbunsPage() {
     setArtistaIdNovo('');
     setDataLancamentoNovo('');
     setSelectedFiles([]);
+    setCapasToDelete([]);
   }
 
   async function handleSubmitAlbum(e: React.FormEvent) {
@@ -125,6 +141,11 @@ export default function AlbunsPage() {
           dataLancamentoNovo || undefined
         );
         albumId = criado.id;
+      }
+      if (editingAlbum && capasToDelete.length > 0) {
+        for (const capaId of capasToDelete) {
+          await albumFacadeService.deletarCapa(albumId, capaId);
+        }
       }
       if (selectedFiles.length > 0) {
         await albumFacadeService.uploadCapas(albumId, selectedFiles);
@@ -221,9 +242,18 @@ export default function AlbunsPage() {
               onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
               className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
             />
-            {selectedFiles.length > 0 && (
-              <p className="mt-1 text-xs text-slate-400">{selectedFiles.length} arquivo(s) selecionado(s)</p>
-            )}
+            <ImagePreviewGrid
+              items={[
+                ...(editingAlbum?.capas ?? [])
+                  .filter((c) => !capasToDelete.includes(c.id))
+                  .map((c) => ({
+                    id: `capa-${c.id}`,
+                    url: c.presignedUrl ?? c.url ?? '/240x240.png',
+                    onRemove: () => setCapasToDelete((prev) => [...prev, c.id]),
+                  })),
+                ...filePreviewItems,
+              ]}
+            />
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button

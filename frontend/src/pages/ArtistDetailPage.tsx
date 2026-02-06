@@ -5,8 +5,8 @@ import { albumFacadeService } from '@/services/AlbumFacadeService';
 import { authService } from '@/services/AuthService';
 import type { Artista, Album, Usuario, TipoArtista } from '@/types/types';
 import Modal from '@/components/common/Modal';
-import { toast } from 'sonner';
-import { getErrorMessage, showApiErrorToast } from '@/lib/errorUtils';
+import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
+import { showApiErrorToast } from '@/lib/errorUtils';
 
 /**
  * Página de Detalhe do Artista
@@ -23,6 +23,7 @@ export default function ArtistDetailPage() {
   const [titulo, setTitulo] = useState('');
   const [dataLancamento, setDataLancamento] = useState<string | undefined>(undefined);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [capasToDelete, setCapasToDelete] = useState<number[]>([]);
   const [showFotoModal, setShowFotoModal] = useState(false);
   const [selectedFotoFile, setSelectedFotoFile] = useState<File | null>(null);
   const [uploadingFoto, setUploadingFoto] = useState(false);
@@ -70,6 +71,7 @@ export default function ArtistDetailPage() {
     setTitulo('');
     setDataLancamento(undefined);
     setSelectedFiles([]);
+    setCapasToDelete([]);
     setShowForm(true);
   }
 
@@ -78,6 +80,7 @@ export default function ArtistDetailPage() {
     setTitulo(album.titulo);
     setDataLancamento(album.dataLancamento ?? undefined);
     setSelectedFiles([]);
+    setCapasToDelete([]);
     setShowForm(true);
   }
 
@@ -98,6 +101,11 @@ export default function ArtistDetailPage() {
         albumResult = await albumFacadeService.criarAlbum(titulo, artistId, dataLancamento);
       }
 
+      if (editingAlbum && capasToDelete.length > 0) {
+        for (const capaId of capasToDelete) {
+          await albumFacadeService.deletarCapa(editingAlbum.id, capaId);
+        }
+      }
       if (selectedFiles && selectedFiles.length > 0) {
         await albumFacadeService.uploadCapas(albumResult.id, selectedFiles);
       }
@@ -218,6 +226,22 @@ export default function ArtistDetailPage() {
                 onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
                 className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
               />
+              <ImagePreviewGrid
+                items={[
+                  ...(editingAlbum?.capas ?? [])
+                    .filter((c) => !capasToDelete.includes(c.id))
+                    .map((c) => ({
+                      id: `capa-${c.id}`,
+                      url: c.presignedUrl ?? c.url ?? '/240x240.png',
+                      onRemove: () => setCapasToDelete((prev) => [...prev, c.id]),
+                    })),
+                  ...selectedFiles.map((f, i) => ({
+                    id: `new-${i}-${f.name}`,
+                    url: URL.createObjectURL(f),
+                    onRemove: () => setSelectedFiles((prev) => prev.filter((_, j) => j !== i)),
+                  })),
+                ]}
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
@@ -295,12 +319,42 @@ export default function ArtistDetailPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-slate-300">Foto (opcional)</label>
+                <label className="block text-sm text-slate-300">Foto</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setSelectedFotoFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
                   className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
+                />
+                <ImagePreviewGrid
+                  items={[
+                    ...(artista?.fotoUrl || artista?.fotoNomeArquivo
+                      ? [
+                          {
+                            id: 'current-foto',
+                            url: artista?.fotoUrl ?? '/240x240.png',
+                            onRemove: async () => {
+                              if (!artistId) return;
+                              try {
+                                await artistFacadeService.deletarFotoArtista(artistId);
+                                await artistFacadeService.carregarArtistaById(artistId);
+                              } catch (err) {
+                                showApiErrorToast(err, 'Erro ao remover foto');
+                              }
+                            },
+                          },
+                        ]
+                      : []),
+                    ...(selectedFotoFile
+                      ? [
+                          {
+                            id: 'new-foto',
+                            url: URL.createObjectURL(selectedFotoFile),
+                            onRemove: () => setSelectedFotoFile(null),
+                          },
+                        ]
+                      : []),
+                  ]}
                 />
               </div>
 

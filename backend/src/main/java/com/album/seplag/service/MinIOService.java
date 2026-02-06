@@ -23,6 +23,7 @@ import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 
@@ -192,6 +193,47 @@ public class MinIOService {
         } catch (Exception e) {
             log.error("Erro ao gerar URL pré-assinada para foto do artista ID {}: {}", artistaId, e.getMessage(), e);
             throw new RuntimeException("Erro ao gerar URL pré-assinada da foto", e);
+        }
+    }
+
+    @Transactional
+    public void deleteFotoArtista(Long artistaId) {
+        Artista artista = artistaRepository.findById(artistaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Artista não encontrado com id: " + artistaId));
+        if (artista.getFotoNomeArquivo() == null || artista.getFotoNomeArquivo().isBlank()) {
+            throw new ResourceNotFoundException("Artista não possui foto cadastrada");
+        }
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(artista.getFotoNomeArquivo())
+                    .build());
+            artista.setFotoNomeArquivo(null);
+            artistaRepository.save(artista);
+            log.info("Foto do artista removida - Artista ID: {}", artistaId);
+        } catch (Exception e) {
+            log.error("Erro ao remover foto do artista ID {}: {}", artistaId, e.getMessage(), e);
+            throw new RuntimeException("Erro ao remover foto do artista", e);
+        }
+    }
+
+    @Transactional
+    public void deleteCapa(Long albumId, Long capaId) {
+        CapaAlbum capa = capaAlbumRepository.findById(capaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Capa não encontrada com id: " + capaId));
+        if (!capa.getAlbum().getId().equals(albumId)) {
+            throw new ResourceNotFoundException("Capa não pertence ao álbum especificado");
+        }
+        try {
+            minioClient.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(capa.getNomeArquivo())
+                    .build());
+            capaAlbumRepository.delete(capa);
+            log.info("Capa removida - Álbum ID: {}, Capa ID: {}", albumId, capaId);
+        } catch (Exception e) {
+            log.error("Erro ao remover capa {} do álbum {}: {}", capaId, albumId, e.getMessage(), e);
+            throw new RuntimeException("Erro ao remover capa", e);
         }
     }
 }

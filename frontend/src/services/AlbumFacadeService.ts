@@ -275,6 +275,19 @@ export class AlbumFacadeService {
   }
 
   /**
+   * Remove uma capa do álbum
+   */
+  async deletarCapa(albumId: number, capaId: number): Promise<void> {
+    try {
+      this.invalidarCache();
+      await api.delete(`/albuns/${albumId}/capa/${capaId}`);
+    } catch (error) {
+      console.error('Erro ao remover capa:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtém URL pré-assinada para exibir capa
    */
   async obterUrlCapa(albumId: number, capaId: number): Promise<string> {
