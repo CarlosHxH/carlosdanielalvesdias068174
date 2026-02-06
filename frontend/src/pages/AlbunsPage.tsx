@@ -4,6 +4,7 @@ import { artistFacadeService } from '@/services/ArtistFacadeService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Album, Artista } from '@/types/types';
 import Modal from '@/components/common/Modal';
+import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
 import { showApiErrorToast } from '@/lib/errorUtils';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
@@ -46,6 +47,8 @@ export default function AlbunsPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [capasToDelete, setCapasToDelete] = useState<number[]>([]);
   const [salvando, setSalvando] = useState(false);
+  const [deleteAlbumOpen, setDeleteAlbumOpen] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null);
   const tamanho = 12;
 
   const filePreviewItems = useMemo(() => {
@@ -164,13 +167,19 @@ export default function AlbunsPage() {
     }
   }
 
-  async function handleDeletarAlbum(albumId: number) {
-    if (!confirm('Confirma exclusão do álbum?')) return;
+  function abrirModalExcluirAlbum(album: Album) {
+    setAlbumToDelete(album);
+    setDeleteAlbumOpen(true);
+  }
+
+  async function handleConfirmDeleteAlbum() {
+    if (!albumToDelete) return;
     try {
-      await albumFacadeService.deletarAlbum(albumId);
+      await albumFacadeService.deletarAlbum(albumToDelete.id);
       await carregar(pagina);
     } catch (err) {
       showApiErrorToast(err, 'Erro ao deletar álbum');
+      throw err;
     }
   }
 
@@ -381,7 +390,7 @@ export default function AlbunsPage() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700/80 rounded-md"
-                              onClick={() => handleDeletarAlbum(album.id)}
+                              onClick={() => abrirModalExcluirAlbum(album)}
                               aria-label="Excluir álbum"
                             >
                               <Trash2 className="size-4" />
@@ -398,6 +407,18 @@ export default function AlbunsPage() {
           ))
         )}
       </div>
+
+      <DeleteConfirmModal
+        open={deleteAlbumOpen}
+        onOpenChange={(open) => {
+          setDeleteAlbumOpen(open);
+          if (!open) setAlbumToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteAlbum}
+        title="Excluir álbum?"
+        description="Esta ação não pode ser desfeita. O álbum e suas capas serão removidos permanentemente."
+        itemName={albumToDelete?.titulo}
+      />
 
       <div className="mt-4 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         <Button

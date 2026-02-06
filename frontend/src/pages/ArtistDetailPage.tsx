@@ -6,6 +6,7 @@ import { albumFacadeService } from '@/services/AlbumFacadeService';
 import { authService } from '@/services/AuthService';
 import type { Artista, Album, Usuario, TipoArtista } from '@/types/types';
 import Modal from '@/components/common/Modal';
+import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
 import { ImagePreviewGrid } from '@/components/common/ImagePreviewGrid';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +40,9 @@ export default function ArtistDetailPage() {
   const [descricaoArtista, setDescricaoArtista] = useState<string>('');
   const [tipoArtista, setTipoArtista] = useState<TipoArtista>('CANTOR');
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [deleteArtistaOpen, setDeleteArtistaOpen] = useState(false);
+  const [deleteAlbumOpen, setDeleteAlbumOpen] = useState(false);
+  const [albumToDelete, setAlbumToDelete] = useState<Album | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -128,25 +132,30 @@ export default function ArtistDetailPage() {
     }
   }
 
-  async function handleDeleteAlbum(albumId: number) {
-    if (!artistId) return;
-    if (!confirm('Confirma exclusão do álbum?')) return;
+  function abrirModalExcluirAlbum(album: Album) {
+    setAlbumToDelete(album);
+    setDeleteAlbumOpen(true);
+  }
+
+  async function handleConfirmDeleteAlbum() {
+    if (!artistId || !albumToDelete) return;
     try {
-      await albumFacadeService.deletarAlbum(albumId);
+      await albumFacadeService.deletarAlbum(albumToDelete.id);
       await albumFacadeService.carregarAlbunsPorArtista(artistId, 0, 12);
     } catch (err) {
       showApiErrorToast(err, 'Erro ao deletar álbum');
+      throw err;
     }
   }
 
-  async function handleDeleteArtista() {
+  async function handleConfirmDeleteArtista() {
     if (!artistId) return;
-    if (!confirm(`Confirma exclusão do artista "${artista?.nome}"? Todos os álbuns serão removidos.`)) return;
     try {
       await artistFacadeService.deletarArtista(artistId);
       navigate('/');
     } catch (err) {
       showApiErrorToast(err, 'Erro ao excluir artista');
+      throw err;
     }
   }
 
@@ -220,7 +229,7 @@ export default function ArtistDetailPage() {
                     variant="outline"
                     size="sm"
                     className="border-slate-600 bg-slate-800/50 text-slate-300 hover:bg-red-950/50 hover:border-red-800 hover:text-red-400"
-                    onClick={handleDeleteArtista}
+                    onClick={() => setDeleteArtistaOpen(true)}
                     aria-label="Excluir artista"
                   >
                     <Trash2 className="size-4" />
@@ -458,7 +467,7 @@ export default function ArtistDetailPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-slate-700/80"
-                                onClick={() => handleDeleteAlbum(album.id)}
+                                onClick={() => abrirModalExcluirAlbum(album)}
                                 aria-label="Excluir álbum"
                               >
                                 <Trash2 className="size-4" />
@@ -479,6 +488,27 @@ export default function ArtistDetailPage() {
             </div>
           </TooltipProvider>
         </section>
+
+        <DeleteConfirmModal
+          open={deleteArtistaOpen}
+          onOpenChange={setDeleteArtistaOpen}
+          onConfirm={handleConfirmDeleteArtista}
+          title="Excluir artista?"
+          description="Esta ação não pode ser desfeita. Todos os álbuns e capas associados serão removidos permanentemente."
+          itemName={artista?.nome}
+        />
+
+        <DeleteConfirmModal
+          open={deleteAlbumOpen}
+          onOpenChange={(open) => {
+            setDeleteAlbumOpen(open);
+            if (!open) setAlbumToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteAlbum}
+          title="Excluir álbum?"
+          description="Esta ação não pode ser desfeita. O álbum e suas capas serão removidos permanentemente."
+          itemName={albumToDelete?.titulo}
+        />
       </div>
     </div>
   );
