@@ -130,7 +130,7 @@ export default function AlbunsPage() {
               value={artistaIdNovo}
               onChange={(e) => setArtistaIdNovo(e.target.value === '' ? '' : Number(e.target.value))}
               required
-              className="mt-1 w-full h-9 rounded-md border border-slate-600 bg-slate-700 px-3 text-white"
+              className="mt-1 w-full h-9 rounded-lg border border-slate-600 bg-slate-700 px-3 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
             >
               <option value="">Selecione o artista</option>
               {artistas.map((a) => (
@@ -148,7 +148,7 @@ export default function AlbunsPage() {
               onChange={(e) => setTituloNovo(e.target.value)}
               required
               placeholder="Título do álbum"
-              className="mt-1 bg-slate-700 border-slate-600 text-white"
+              className="mt-1 bg-slate-700 border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
             />
           </div>
           <div>
@@ -158,14 +158,23 @@ export default function AlbunsPage() {
               type="date"
               value={dataLancamentoNovo}
               onChange={(e) => setDataLancamentoNovo(e.target.value)}
-              className="mt-1 bg-slate-700 border-slate-600 text-white"
+              className="mt-1 bg-slate-700 border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowNovoAlbum(false)}>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowNovoAlbum(false)}
+              className="bg-slate-700 hover:bg-slate-600 text-slate-200"
+            >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={salvando}>
+            <Button
+              type="submit"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30"
+              disabled={salvando}
+            >
               {salvando ? 'Salvando...' : 'Criar'}
             </Button>
           </div>

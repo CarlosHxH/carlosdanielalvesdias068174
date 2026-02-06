@@ -195,7 +195,7 @@ export default function ArtistDetailPage() {
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 required
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded mt-1 text-white"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg mt-1 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
               />
             </div>
 
@@ -205,7 +205,7 @@ export default function ArtistDetailPage() {
                 type="date"
                 value={dataLancamento ?? ''}
                 onChange={(e) => setDataLancamento(e.target.value || undefined)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded mt-1 text-white"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg mt-1 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
               />
             </div>
 
@@ -216,15 +216,22 @@ export default function ArtistDetailPage() {
                 accept="image/*"
                 multiple
                 onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
-                className="mt-1 text-sm text-slate-200"
+                className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
               />
             </div>
 
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={fecharFormulario} className="px-4 py-2 bg-slate-600 text-white rounded">
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={fecharFormulario}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
+              >
                 Cancelar
               </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/30 transition-colors"
+              >
                 Salvar
               </button>
             </div>
@@ -262,7 +269,7 @@ export default function ArtistDetailPage() {
                   value={nomeArtista}
                   onChange={(e) => setNomeArtista(e.target.value)}
                   required
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded mt-1 text-white"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg mt-1 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
                 />
               </div>
 
@@ -271,7 +278,7 @@ export default function ArtistDetailPage() {
                 <select
                   value={tipoArtista}
                   onChange={(e) => setTipoArtista(e.target.value as TipoArtista)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded mt-1 text-white"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg mt-1 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
                 >
                   <option value="CANTOR">Cantor</option>
                   <option value="BANDA">Banda</option>
@@ -283,7 +290,7 @@ export default function ArtistDetailPage() {
                 <textarea
                   value={descricaoArtista}
                   onChange={(e) => setDescricaoArtista(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded mt-1 text-white"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg mt-1 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 min-h-[80px]"
                 />
               </div>
 
@@ -293,14 +300,23 @@ export default function ArtistDetailPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setSelectedFotoFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                  className="mt-1 w-full text-sm text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white file:cursor-pointer hover:file:bg-slate-500"
                 />
               </div>
 
-              <div className="flex justify-end gap-2">
-                <button className="px-4 py-2 bg-slate-600 text-white rounded" type="button" onClick={() => setShowFotoModal(false)}>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
+                  type="button"
+                  onClick={() => setShowFotoModal(false)}
+                >
                   Cancelar
                 </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded" type="submit" disabled={uploadingFoto}>
+                <button
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-900/30 transition-colors disabled:opacity-50"
+                  type="submit"
+                  disabled={uploadingFoto}
+                >
                   {uploadingFoto ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
